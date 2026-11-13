@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #5F978B;
+    --color-primary-hover: #477D72;
+    --color-accent: #A9D5C5;
+    --color-soft-mint: #D9EEE5;
+    --color-bg: #F7FAF8;
+    --color-surface: #FFFFFF;
+    --color-text-primary: #263D38;
+    --color-text-secondary: #718780;
+    --color-border: #E1EBE5;
+    --color-lavender: #EEE9F8;
+    --color-powder-blue: #E8F0F8;
+    --color-soft-peach: #F7EAE2;
+    --color-butter-cream: #F5F0DE;
+    --font-vazir: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  html,
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif !important;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  body {
+    background-color: #F7FAF8;
+    color: #263D38;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Pastel Clinical Mint Gradients */
+.bg-gradient-main-mint {
+  background: linear-gradient(110deg, #DCEFE7, #B8DCCE);
+}
+
+.bg-gradient-soft-mint {
+  background: linear-gradient(135deg, #A9D5C5, #D9EEE5);
+}
+
+.bg-gradient-lavender {
+  background: linear-gradient(110deg, #E8F0F8, #EEE9F8);
+}
+
+.bg-gradient-muted-teal {
+  background: linear-gradient(110deg, #477D72, #5F978B);
+}
+
+/* Bidirectional text utilities */
+.bidi-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+/* Tabular numerals for prices and statistics */
+.tabular-nums-fa {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7FAF8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #A9D5C5;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5F978B;
+}

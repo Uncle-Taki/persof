@@ -1,0 +1,6 @@
+{
+  "name": "Perso — سامانه هوشمند پایش بازار تلگرام",
+  "description": "پلتفرم هوشمند پایش کانال‌ها و گروه‌های تلگرامی ویژه تجهیزات پزشکی، محصولات داروخانه‌ای و سلامت با تحلیل خودکار قیمت و فروشندگان.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
