@@ -26,6 +26,7 @@ import {
 import { ApiClient, ApiError, type Offer, type Source } from "../api/client";
 import { useResource } from "./useResource";
 import "./live.css";
+import { AccountPanel } from "./AccountPanel";
 
 type Tab = "offers" | "interests" | "sources" | "conversations" | "settings";
 const tabs: { id: Tab; fa: string; en: string; icon: typeof Activity }[] = [
@@ -77,10 +78,9 @@ export function LiveApp() {
   );
   const fa = lang === "fa",
     t = (a: string, b: string) => (fa ? a : b);
-  const [token, setToken] = useState(
-    () => sessionStorage.getItem("perso.apiToken") || "",
-  );
-  const [draftToken, setDraftToken] = useState("");
+  const [authVersion, setAuthVersion] = useState(0);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [authError, setAuthError] = useState("");
   const [current, navigate] = useRoute();
@@ -124,40 +124,55 @@ export function LiveApp() {
       previous?.focus();
     };
   }, [confirmDelete]);
-  const api = useMemo(() => new ApiClient(token), [token]);
-  const session = useResource(() => api.session(), [api], !!token);
-  const ready = !!session.value;
+  const api = useMemo(() => new ApiClient(), []);
+  const session = useResource(() => api.session(), [api, authVersion]);
+  const ready = !!session.value && !session.error;
+  const marketplace = ready && !!session.value?.data.marketplace_access;
+  useEffect(() => {
+    sessionStorage.removeItem("perso.apiToken");
+  }, []);
+  useEffect(() => {
+    const prefs = session.value?.data.user?.preferences;
+    if (prefs) {
+      setLang(prefs.language);
+      setSort(prefs.default_sort);
+    }
+  }, [
+    session.value?.data.user?.preferences.language,
+    session.value?.data.user?.preferences.default_sort,
+  ]);
   const products = useResource(() => api.products(), [api, version], ready);
   const interests = useResource(() => api.interests(), [api, version], ready);
-  const sources = useResource(() => api.sources(), [api, version], ready);
-  const gateway = useResource(() => api.gateway(), [api, version], ready);
+  const sources = useResource(() => api.sources(), [api, version], marketplace);
+  const gateway = useResource(() => api.gateway(), [api, version], marketplace);
   const conversations = useResource(
     () => api.conversations(),
     [api, version],
-    ready && current.tab === "conversations",
+    marketplace && current.tab === "conversations",
   );
   const offers = useResource(
     () =>
       api.offers(
         new URLSearchParams({
           sort_by: sort,
+          with_scores: "true",
           limit: "20",
           offset: String(offset),
           ...(current.product ? { product_id: current.product } : {}),
         }),
       ),
     [api, sort, offset, current.product, version],
-    ready && current.tab === "offers",
+    marketplace && current.tab === "offers",
   );
   const details = useResource(
     () => api.conversation(current.conversation),
     [api, current.conversation, version],
-    ready && !!current.conversation,
+    marketplace && !!current.conversation,
   );
   const stats = useResource(
     () => api.statistics(current.product),
     [api, current.product, version],
-    ready && !!current.product,
+    marketplace && !!current.product,
   );
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -169,13 +184,21 @@ export function LiveApp() {
   }, [sort, current.product]);
   useEffect(() => {
     const timer = setInterval(() => {
-      if (document.visibilityState === "visible" && !busy)
+      if (document.visibilityState === "visible" && !busy) {
         setVersion((v) => v + 1);
+        void session.refresh();
+      }
     }, 30000);
     return () => clearInterval(timer);
   }, [busy]);
   const number = (n: number) =>
-    new Intl.NumberFormat(fa ? "fa-IR" : "en-US").format(n);
+    new Intl.NumberFormat(
+      session.value?.data.user?.preferences.number_format === "latin"
+        ? "en-US"
+        : fa
+          ? "fa-IR"
+          : "en-US",
+    ).format(n);
   const money = (offer: Offer) =>
     offer.price_amount == null
       ? t("قیمت اعلام نشده", "Price not provided")
@@ -184,6 +207,9 @@ export function LiveApp() {
     v
       ? new Intl.DateTimeFormat(fa ? "fa-IR" : "en-GB", {
           dateStyle: "medium",
+          ...(session.value?.data.user?.preferences.number_format === "latin"
+            ? { numberingSystem: "latn" }
+            : {}),
           timeStyle: "short",
         }).format(new Date(v))
       : t("هنوز همگام نشده", "Not synced yet");
@@ -192,14 +218,16 @@ export function LiveApp() {
     setConnecting(true);
     setAuthError("");
     try {
-      await new ApiClient(draftToken.trim()).session();
-      sessionStorage.setItem("perso.apiToken", draftToken.trim());
-      setToken(draftToken.trim());
-      setDraftToken("");
+      await api.login(username.trim(), password);
+      setPassword("");
+      setAuthVersion((v) => v + 1);
     } catch (e) {
       setAuthError(
         e instanceof ApiError && e.status === 401
-          ? t("کلید دسترسی معتبر نیست.", "Access key is invalid.")
+          ? t(
+              "نام کاربری یا رمز عبور معتبر نیست.",
+              "Invalid username or password.",
+            )
           : t(
               "اتصال به سرور برقرار نشد. دوباره تلاش کنید.",
               "Could not reach the server. Please retry.",
@@ -226,10 +254,36 @@ export function LiveApp() {
       setBusy(false);
     }
   }
-  function logout() {
-    sessionStorage.removeItem("perso.apiToken");
-    setToken("");
+  function signedOut() {
+    setPassword("");
     setNotice("");
+    setAuthVersion((v) => v + 1);
+    navigate("settings");
+  }
+  async function logout() {
+    try {
+      await api.logout();
+      signedOut();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Sign out failed");
+    }
+  }
+  async function toggleLanguage() {
+    const language = fa ? "en" : "fa";
+    if (!ready || !session.value?.data.user) {
+      setLang(language);
+      return;
+    }
+    try {
+      await api.preferences({
+        ...session.value.data.user.preferences,
+        language,
+      });
+      setLang(language);
+      await session.refresh();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Language update failed");
+    }
   }
   const errorBox = (error: Error | null, retry?: () => void) =>
     error ? (
@@ -274,7 +328,13 @@ export function LiveApp() {
     );
   }
   const title = tabs.find((tab) => tab.id === current.tab)!;
-  if (!token)
+  if (session.loading && !session.value && !authError)
+    return (
+      <div className="live-app live-loading" role="status">
+        {t("در حال بررسی نشست…", "Checking session…")}
+      </div>
+    );
+  if (!ready)
     return (
       <div className="live-app live-login" dir={fa ? "rtl" : "ltr"}>
         <div className="live-login-art">
@@ -308,20 +368,40 @@ export function LiveApp() {
           <h2>{t("ورود به فضای کاری", "Open your workspace")}</h2>
           <p>
             {t(
-              "کلید دسترسی تنظیم‌شده برای فضای کاری را وارد کنید.",
-              "Enter the access key configured for your workspace.",
+              "با نام کاربری و رمز عبور خود وارد شوید.",
+              "Sign in with your personal username and password.",
             )}
           </p>
-          <label htmlFor="access-key">{t("کلید دسترسی", "Access key")}</label>
+          <label htmlFor="username">{t("نام کاربری", "Username")}</label>
           <input
-            id="access-key"
+            id="username"
+            dir="ltr"
+            autoComplete="username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <label htmlFor="password">{t("رمز عبور", "Password")}</label>
+          <input
+            id="password"
             type="password"
             dir="ltr"
-            autoComplete="off"
+            autoComplete="current-password"
             required
-            value={draftToken}
-            onChange={(e) => setDraftToken(e.target.value)}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
+          {session.error &&
+            !(
+              session.error instanceof ApiError && session.error.status === 401
+            ) && (
+              <p role="alert">
+                {t("ارتباط با سرور برقرار نیست.", "Cannot reach the server.")}{" "}
+                <button type="button" onClick={() => void session.refresh()}>
+                  {t("تلاش مجدد", "Retry")}
+                </button>
+              </p>
+            )}
           {authError && (
             <p role="alert" className="live-error-text">
               {authError}
@@ -336,7 +416,7 @@ export function LiveApp() {
             {t("ورود امن", "Connect securely")}
           </button>
           <div className="live-login-links">
-            <button type="button" onClick={() => setLang(fa ? "en" : "fa")}>
+            <button type="button" onClick={() => void toggleLanguage()}>
               <Globe2 size={17} /> {fa ? "English" : "فارسی"}
             </button>
             <a href="?mode=demo">
@@ -363,16 +443,18 @@ export function LiveApp() {
             className={`live-status ${gateway.value?.data.connected ? "is-connected" : ""}`}
           >
             <span />
-            {gateway.value?.data.mock
-              ? t("اتصال آزمایشی", "Mock connection")
-              : gateway.value?.data.connected
-                ? t("تلگرام متصل", "Telegram connected")
-                : t("اتصال تلگرام بررسی شود", "Check Telegram connection")}
+            {!marketplace
+              ? t("حساب خریدار", "Buyer account")
+              : gateway.value?.data.mock
+                ? t("اتصال آزمایشی", "Mock connection")
+                : gateway.value?.data.connected
+                  ? t("تلگرام متصل", "Telegram connected")
+                  : t("اتصال تلگرام بررسی شود", "Check Telegram connection")}
           </span>
           <button
             className="live-icon"
             aria-label={t("تغییر زبان", "Change language")}
-            onClick={() => setLang(fa ? "en" : "fa")}
+            onClick={() => void toggleLanguage()}
           >
             <Globe2 size={20} />
           </button>
@@ -457,7 +539,7 @@ export function LiveApp() {
                 )}
               </div>
             )}
-            {current.tab === "offers" && (
+            {current.tab === "offers" && marketplace && (
               <>
                 <section className="live-hero">
                   <div>
@@ -526,6 +608,9 @@ export function LiveApp() {
                     </option>
                     <option value="lowest_price">
                       {t("کمترین قیمت", "Lowest price")}
+                    </option>
+                    <option value="highest_price">
+                      {t("بیشترین قیمت", "Highest price")}
                     </option>
                     <option value="newest">{t("جدیدترین", "Newest")}</option>
                   </select>
@@ -632,7 +717,7 @@ export function LiveApp() {
                             {number(
                               Math.round(row.score_breakdown.final_score),
                             )}
-                            <small>/۱۰۰</small>
+                            <small>/{number(100)}</small>
                           </span>
                         </div>
                         <div className="live-offer-meta">
@@ -791,7 +876,7 @@ export function LiveApp() {
                   )}
               </>
             )}
-            {current.tab === "sources" && (
+            {current.tab === "sources" && marketplace && (
               <>
                 <div className="live-section-intro">
                   <h2>
@@ -976,7 +1061,7 @@ export function LiveApp() {
                   )}
               </>
             )}
-            {current.tab === "conversations" && (
+            {current.tab === "conversations" && marketplace && (
               <>
                 <div className="live-section-intro">
                   <h2>
@@ -1162,98 +1247,39 @@ export function LiveApp() {
                   )}
               </>
             )}
-            {current.tab === "settings" && (
-              <div className="live-settings">
-                <section className="live-panel">
-                  <h2>
-                    {t(
-                      "حساب و اتصال تلگرام",
-                      "Account and Telegram connection",
-                    )}
-                  </h2>
+            {!marketplace &&
+              ["offers", "sources", "conversations"].includes(current.tab) && (
+                <div className="live-panel">
+                  <h2>{t("فضای خریدار", "Buyer workspace")}</h2>
                   <p>
                     {t(
-                      "این نسخه یک فضای کاری با یک مدیر و یک حساب تلگرام دارد.",
-                      "This release has one operator workspace and one Telegram account.",
+                      "حساب، تنظیمات و علاقه‌مندی‌های شما فعال است. دسترسی به پیشنهادها و منابع پس از تکمیل تخصیص منابع در مرحلهٔ ۳ فعال می‌شود.",
+                      "Your account, preferences and interests are available. Assigned-source offers and conversations become available in step 3.",
                     )}
                   </p>
-                  <dl>
-                    <div>
-                      <dt>{t("دامنه کاتالوگ", "Catalog domain")}</dt>
-                      <dd>{t("کالاهای الکترونیکی", "Electronics")}</dd>
-                    </div>
-                    <div>
-                      <dt>{t("اتصال تلگرام", "Telegram connection")}</dt>
-                      <dd>
-                        {gateway.value?.data.connected
-                          ? t("متصل", "Connected")
-                          : t("نیازمند بررسی", "Needs attention")}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>{t("پردازش", "Processing")}</dt>
-                      <dd>
-                        {gateway.value?.data.mock
-                          ? t("پیام‌های آزمایشی", "Mock messages")
-                          : t(
-                              "پیام‌های حساب متصل",
-                              "Connected account messages",
-                            )}
-                      </dd>
-                    </div>
-                  </dl>
-                  <p>
-                    {t(
-                      "برای ورود اولیه یا تمدید نشست، مدیر سرور باید در ترمینال راه‌اندازی حساب را اجرا کند. هنگام ورود، سرویس تلگرام را متوقف کنید.",
-                      "For first login or reauthorization, the operator runs account setup in the server terminal. Stop the Telegram service during login.",
-                    )}
-                  </p>
-                  <code dir="ltr">
-                    docker compose stop telegram-gateway
-                    <br />
-                    docker compose run --rm -it telegram-gateway login
-                    <br />
-                    docker compose up -d telegram-gateway
-                  </code>
-                </section>
-                <section className="live-panel">
-                  <h2>{t("نمایش و داده‌ها", "Display and data")}</h2>
                   <button
-                    className="live-secondary"
-                    onClick={() => setLang(fa ? "en" : "fa")}
+                    className="live-primary"
+                    onClick={() => navigate("interests")}
                   >
-                    <Globe2 size={18} />
-                    {fa ? "English" : "فارسی"}
+                    {t("علاقه‌مندی‌های من", "My interests")}
                   </button>
-                  <p>
-                    {t(
-                      "زبان در این مرورگر ذخیره می‌شود. کلید دسترسی فقط تا پایان نشست مرورگر نگهداری می‌شود.",
-                      "Language is saved in this browser. The access key is kept only for this browser session.",
-                    )}
-                  </p>
-                  <a href="?mode=demo">
-                    {t(
-                      "باز کردن پیش‌نمایش مستقل با داده نمونه",
-                      "Open the separate sample preview",
-                    )}
-                  </a>
-                </section>
-                <section className="live-panel">
-                  <h2>{t("راهنمای داده و قیمت", "Data and price notes")}</h2>
-                  <p>
-                    {t(
-                      "قیمت مقایسه‌ای به تومان و با حذف آگهی‌های نامعتبر محاسبه می‌شود. امتیاز پیشنهاد، تأیید هویت یا اصالت فروشنده نیست.",
-                      "Comparisons use Toman and exclude ineligible listings. An offer score does not verify seller identity or authenticity.",
-                    )}
-                  </p>
-                  <p>
-                    {t(
-                      "سیاست نگهداری و ارسال داده به مدل خارجی توسط مدیر سرور تنظیم می‌شود. ارسال پیام به فروشنده به‌صورت پیش‌فرض غیرفعال است.",
-                      "Retention and external model processing are configured by the operator. Seller outreach is disabled by default.",
-                    )}
-                  </p>
-                </section>
-              </div>
+                </div>
+              )}
+            {current.tab === "settings" && session.value?.data.user && (
+              <AccountPanel
+                key={session.value.data.user.id}
+                api={api}
+                user={session.value.data.user}
+                fa={fa}
+                saved={(preferences) => {
+                  if (preferences) {
+                    setLang(preferences.language);
+                    setSort(preferences.default_sort);
+                  }
+                  void session.refresh();
+                }}
+                signedOut={signedOut}
+              />
             )}
           </>
         )}

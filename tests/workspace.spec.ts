@@ -1,14 +1,20 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-const key =
-  process.env.PERSO_E2E_TOKEN ||
-  "perso-local-test-token-at-least-32-characters";
+const username = process.env.PERSO_E2E_USERNAME || "owner";
+const password =
+  process.env.PERSO_E2E_PASSWORD || "perso-e2e-password-test-only-123";
 const live = process.env.PERSO_E2E_LIVE === "1";
 async function signIn(page: Page) {
   await page.addInitScript(() => localStorage.setItem("perso.language", "en"));
   await page.goto("/");
-  await page.getByLabel("Access key").fill(key);
+  await page.getByLabel("Username", { exact: true }).fill(username);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Connect securely" }).click();
+  await expect(page.locator(".live-header")).toBeVisible();
+  const session = await (await page.request.get("/api/v1/session")).json();
+  if (session.data.user.preferences.language === "fa") {
+    await page.getByRole("button", { name: "تغییر زبان", exact: true }).click();
+  }
   await expect(
     page.getByRole("heading", { name: "Offers", exact: true }),
   ).toBeVisible();
@@ -22,7 +28,7 @@ test("sample preview stays explicit and can return to the live login", async ({
   await page.goto("/?mode=demo");
   await expect(page.locator(".demo-return")).toBeVisible();
   await page.locator(".demo-return").click();
-  await expect(page.locator("#access-key")).toBeVisible();
+  await expect(page.locator("#username")).toBeVisible();
   await expect(page.locator(".live-offer")).toHaveCount(0);
 });
 test.describe("server-backed workspace", () => {
@@ -37,10 +43,11 @@ test.describe("server-backed workspace", () => {
       localStorage.setItem("perso.language", "en"),
     );
     await page.goto("/");
-    await page.getByLabel("Access key").fill("invalid");
+    await page.getByLabel("Username", { exact: true }).fill("invalid");
+    await page.getByLabel("Password", { exact: true }).fill("invalid-password");
     await page.getByRole("button", { name: "Connect securely" }).click();
     await expect(page.getByRole("alert")).toContainText(
-      "Access key is invalid",
+      "Invalid username or password",
     );
     await expect(page.locator(".live-offer")).toHaveCount(0);
   });
