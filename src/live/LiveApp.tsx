@@ -163,7 +163,11 @@ export function LiveApp() {
   const products = useResource(() => api.products(), [api, version], ready);
   const interests = useResource(() => api.interests(), [api, version], ready);
   const sources = useResource(() => api.sources(), [api, version], marketplace);
-  const gateway = useResource(() => api.gateway(), [api, version], marketplace);
+  const gateway = useResource(
+    () => api.gateway(),
+    [api, version],
+    marketplace && canAssignSources,
+  );
   const accounts = useResource(
     () => api.users(),
     [api, version],
@@ -970,8 +974,9 @@ export function LiveApp() {
                     )}
                   </p>
                 </div>
-                {errorBox(gateway.error, () => void gateway.refresh())}
-                {gateway.value && !gateway.value.data.connected && (
+                {canAssignSources &&
+                  errorBox(gateway.error, () => void gateway.refresh())}
+                {canAssignSources && gateway.value && !gateway.value.data.connected && (
                   <div className="live-banner">
                     {t(
                       "حساب تلگرام نیاز به ورود دارد. راهنمای اتصال را در تنظیمات ببینید.",
@@ -979,7 +984,7 @@ export function LiveApp() {
                     )}
                   </div>
                 )}
-                <form
+                {canAssignSources && <form
                   className="live-source-form live-panel"
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -1063,7 +1068,7 @@ export function LiveApp() {
                       </button>
                     </div>
                   )}
-                </form>
+                </form>}
                 {errorBox(sources.error, () => void sources.refresh())}
                 <div className="live-source-list">
                   {(sources.value?.data || []).map((source) => (
@@ -1152,7 +1157,7 @@ export function LiveApp() {
                             )}
                         </div>
                       )}
-                      <div className="live-source-actions">
+                      {canAssignSources && <div className="live-source-actions">
                         <button
                           disabled={busy}
                           className="live-secondary"
@@ -1183,7 +1188,7 @@ export function LiveApp() {
                         >
                           <Trash2 size={18} />
                         </button>
-                      </div>
+                      </div>}
                     </article>
                   ))}
                 </div>
@@ -1392,7 +1397,7 @@ export function LiveApp() {
                   <p>
                     {t(
                       "حساب، تنظیمات و علاقه‌مندی‌های شما فعال است. دسترسی به پیشنهادها و منابع پس از تکمیل تخصیص منابع در مرحلهٔ ۳ فعال می‌شود.",
-                      "Your account, preferences and interests are available. Assigned-source offers and conversations become available in step 3.",
+                        "Your account, preferences and interests are available. Offers and conversations follow your administrator-managed source assignments.",
                     )}
                   </p>
                   <button
