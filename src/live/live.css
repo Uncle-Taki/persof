@@ -615,6 +615,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+.live-catalog-form {
+  margin-bottom: 18px;
+}
+.live-catalog-form > strong {
+  display: block;
+  margin-bottom: 12px;
+}
+.live-interest-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+}
+.live-interest-filters input {
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 10px;
+}
 .live-catalog-card {
   display: flex;
   align-items: center;

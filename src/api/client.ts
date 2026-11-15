@@ -1,14 +1,31 @@
 import type { components } from "./schema";
 export type Product = components["schemas"]["Product"];
+export type CatalogProduct = Product & {
+  unit?: string;
+  pack_size?: number | null;
+  prescription_required?: boolean;
+  expiry_required?: boolean;
+};
 export type Offer = components["schemas"]["Offer"];
 export type ScoredOffer = components["schemas"]["ScoredOffer"];
-export type Interest = components["schemas"]["Interest"];
+export type Interest = components["schemas"]["Interest"] & {
+  max_price_amount?: number | null;
+  min_quantity?: number | null;
+  preferred_city?: string;
+  required_attributes?: Record<string, unknown>;
+};
 export type Source = components["schemas"]["TelegramSource"];
 export type Conversation = components["schemas"]["Conversation"];
 export type Session = components["schemas"]["Session"];
 export type Resolution = components["schemas"]["ResolveSourceResponse"];
 export type Account = components["schemas"]["Account"];
 export type Preferences = components["schemas"]["Preferences"];
+export type InterestFilters = {
+  max_price_amount?: number | null;
+  min_quantity?: number | null;
+  preferred_city?: string;
+  required_attributes?: Record<string, unknown>;
+};
 export type SourceAssignments = {
   source_id: string;
   workspace_id: string;
@@ -115,7 +132,21 @@ export class ApiClient {
       body: JSON.stringify({ password }),
     });
   session = () => this.request<Session>("/session");
-  products = () => this.request<Product[]>("/products?limit=100");
+  products = () => this.request<CatalogProduct[]>("/products?limit=100");
+  createProduct = (data: {
+    name: string;
+    category: string;
+    brand?: string;
+    manufacturer?: string;
+    model?: string;
+    unit?: string;
+    pack_size?: number;
+    prescription_required?: boolean;
+    expiry_required?: boolean;
+    attributes?: Record<string, unknown>;
+  }) => this.request<CatalogProduct>("/products", { method: "POST", body: JSON.stringify(data) });
+  updateProduct = (id: string, data: Partial<InterestFilters> & { name?: string; category?: string; unit?: string; pack_size?: number; prescription_required?: boolean; expiry_required?: boolean }) =>
+    this.request<CatalogProduct>(`/products/${id}`, { method: "PATCH", body: JSON.stringify(data) });
   offers = (query: URLSearchParams) =>
     this.request<ScoredOffer[]>(`/offers?${query}`);
   interests = () => this.request<Interest[]>("/interests");
@@ -155,11 +186,13 @@ export class ApiClient {
     });
   removeSource = (id: string) =>
     this.request(`/sources/${id}`, { method: "DELETE" });
-  addInterest = (id: string) =>
+  addInterest = (id: string, filters: InterestFilters = {}) =>
     this.request<Interest>("/interests", {
       method: "POST",
-      body: JSON.stringify({ product_id: id }),
+      body: JSON.stringify({ product_id: id, ...filters }),
     });
+  updateInterest = (id: string, filters: InterestFilters) =>
+    this.request<Interest>(`/interests/${id}`, { method: "PATCH", body: JSON.stringify(filters) });
   removeInterest = (id: string) =>
     this.request(`/interests/${id}`, { method: "DELETE" });
   conversation = (id: string) =>
