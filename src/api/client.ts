@@ -7,6 +7,8 @@ export type Source = components["schemas"]["TelegramSource"];
 export type Conversation = components["schemas"]["Conversation"];
 export type Session = components["schemas"]["Session"];
 export type Resolution = components["schemas"]["ResolveSourceResponse"];
+export type Account = components["schemas"]["Account"];
+export type Preferences = components["schemas"]["Preferences"];
 export type Message = {
   id: string;
   sender: string;
@@ -26,19 +28,18 @@ export class ApiError extends Error {
   }
 }
 export class ApiClient {
-  constructor(
-    private token: string,
-    private base = "/api/v1",
-  ) {}
+  private csrfToken = "";
+  constructor(private base = "/api/v1") {}
   async request<T>(
     path: string,
     options: RequestInit = {},
   ): Promise<{ data: T; meta?: Meta }> {
     const response = await fetch(this.base + path, {
       ...options,
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
-        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        ...(this.csrfToken ? { "X-CSRF-Token": this.csrfToken } : {}),
         ...options.headers,
       },
       signal: options.signal ?? AbortSignal.timeout(45000),
@@ -49,8 +50,62 @@ export class ApiClient {
         body?.error || `Request failed (${response.status})`,
         response.status,
       );
+    if (body.data?.csrf_token) this.csrfToken = body.data.csrf_token;
     return { data: body.data, meta: body.meta };
   }
+  login = (username: string, password: string) =>
+    this.request<components["schemas"]["LoginResult"]>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+  logout = () => this.request("/auth/logout", { method: "POST", body: "{}" });
+  me = () => this.request<Account>("/me");
+  profile = (data: { username: string; full_name: string; email: string }) =>
+    this.request<Account>("/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  preferences = (data: Preferences) =>
+    this.request<Preferences>("/me/preferences", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  password = (current_password: string, password: string) =>
+    this.request("/me/password", {
+      method: "POST",
+      body: JSON.stringify({ current_password, password }),
+    });
+  users = () => this.request<Account[]>("/users");
+  createUser = (data: {
+    username: string;
+    full_name: string;
+    email: string;
+    role: Account["role"];
+    password: string;
+  }) =>
+    this.request<Account>("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  updateUser = (
+    id: string,
+    data: {
+      username?: string;
+      full_name?: string;
+      email?: string;
+      role?: Account["role"];
+      active?: boolean;
+    },
+  ) =>
+    this.request<Account>(`/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  resetPassword = (id: string, password: string) =>
+    this.request(`/users/${id}/reset-password`, {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    });
   session = () => this.request<Session>("/session");
   products = () => this.request<Product[]>("/products?limit=100");
   offers = (query: URLSearchParams) =>

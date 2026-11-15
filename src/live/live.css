@@ -1354,3 +1354,56 @@
     gap: 10px;
   }
 }
+
+.live-account {
+  display: grid;
+  gap: 20px;
+  max-width: 960px;
+}
+.live-account-form {
+  display: grid;
+  gap: 14px;
+  margin-block: 20px;
+  max-width: 640px;
+}
+.live-account-form label {
+  display: grid;
+  gap: 7px;
+  font-weight: 600;
+}
+.live-account-form input,
+.live-account-form select {
+  min-height: 44px;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #7d9d92;
+  border-radius: 10px;
+  color: #17392e;
+  background: white;
+  font: inherit;
+  box-sizing: border-box;
+}
+.live-account-form input[type="checkbox"] {
+  width: 22px;
+  min-height: 22px;
+}
+.live-user-list {
+  display: grid;
+  gap: 10px;
+}
+.live-user-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-block-end: 1px solid #dce9e3;
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 500px) {
+  .live-user-row {
+    align-items: start;
+    flex-direction: column;
+  }
+}
