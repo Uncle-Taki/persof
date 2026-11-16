@@ -12,6 +12,9 @@ import { InterestsPage } from "../pages/InterestsPage";
 import { AccountPanel } from "./AccountPanel";
 import { useResource } from "./useResource";
 
+type HealthcareOffer = ApiOffer & { source_id?: string };
+type HealthcareSource = ApiSource & { linked_discussion_peer_id?: number };
+
 type RouteState = {
   screen: ScreenId;
   productId?: string;
@@ -135,7 +138,7 @@ function mapProduct(product: ApiProduct, stats?: { currency: string; min_price: 
   };
 }
 
-function mapSource(source: ApiSource, lang: Language): UiSource {
+function mapSource(source: HealthcareSource, lang: Language): UiSource {
   const active = source.is_active && source.ingestion_status === "active";
   const peerType = source.source_type === "basic_group" ? "group" : source.source_type;
   const lastSynced = formatDate(source.last_synced_at, lang);
@@ -156,7 +159,7 @@ function mapSource(source: ApiSource, lang: Language): UiSource {
     descriptionEn: "",
     keywords: [],
     linkedDiscussion: {
-      hasLinkedDiscussion: Boolean(source.capabilities?.has_discussion),
+      hasLinkedDiscussion: Boolean(source.capabilities?.has_discussion && source.linked_discussion_peer_id),
       discussionUsername: undefined,
       discussionTitleFa: undefined,
       discussionTitleEn: undefined,
@@ -166,7 +169,7 @@ function mapSource(source: ApiSource, lang: Language): UiSource {
 }
 
 function mapOffer(scored: ScoredOffer, products: Map<string, ApiProduct>, sources: Map<string, ApiSource>, lang: Language): UiOffer {
-  const offer: ApiOffer = scored.offer;
+  const offer: HealthcareOffer = scored.offer;
   const product = offer.product || (offer.product_id ? products.get(offer.product_id) : undefined);
   const source = offer.source_id ? sources.get(offer.source_id) : undefined;
   const created = offer.created_at;
