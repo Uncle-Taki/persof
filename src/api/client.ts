@@ -1,31 +1,16 @@
 import type { components } from "./schema";
 export type Product = components["schemas"]["Product"];
-export type CatalogProduct = Product & {
-  unit?: string;
-  pack_size?: number | null;
-  prescription_required?: boolean;
-  expiry_required?: boolean;
-};
+export type CatalogProduct = Product;
 export type Offer = components["schemas"]["Offer"];
 export type ScoredOffer = components["schemas"]["ScoredOffer"];
-export type Interest = components["schemas"]["Interest"] & {
-  max_price_amount?: number | null;
-  min_quantity?: number | null;
-  preferred_city?: string;
-  required_attributes?: Record<string, unknown>;
-};
+export type Interest = components["schemas"]["Interest"];
 export type Source = components["schemas"]["TelegramSource"];
 export type Conversation = components["schemas"]["Conversation"];
 export type Session = components["schemas"]["Session"];
 export type Resolution = components["schemas"]["ResolveSourceResponse"];
 export type Account = components["schemas"]["Account"];
 export type Preferences = components["schemas"]["Preferences"];
-export type InterestFilters = {
-  max_price_amount?: number | null;
-  min_quantity?: number | null;
-  preferred_city?: string;
-  required_attributes?: Record<string, unknown>;
-};
+export type InterestFilters = components["schemas"]["UpdateInterestRequest"];
 export type SourceAssignments = {
   source_id: string;
   workspace_id: string;
@@ -133,19 +118,9 @@ export class ApiClient {
     });
   session = () => this.request<Session>("/session");
   products = () => this.request<CatalogProduct[]>("/products?limit=100");
-  createProduct = (data: {
-    name: string;
-    category: string;
-    brand?: string;
-    manufacturer?: string;
-    model?: string;
-    unit?: string;
-    pack_size?: number;
-    prescription_required?: boolean;
-    expiry_required?: boolean;
-    attributes?: Record<string, unknown>;
-  }) => this.request<CatalogProduct>("/products", { method: "POST", body: JSON.stringify(data) });
-  updateProduct = (id: string, data: Partial<InterestFilters> & { name?: string; category?: string; unit?: string; pack_size?: number; prescription_required?: boolean; expiry_required?: boolean }) =>
+  createProduct = (data: components["schemas"]["CreateProductRequest"]) =>
+    this.request<CatalogProduct>("/products", { method: "POST", body: JSON.stringify(data) });
+  updateProduct = (id: string, data: components["schemas"]["UpdateProductRequest"]) =>
     this.request<CatalogProduct>(`/products/${id}`, { method: "PATCH", body: JSON.stringify(data) });
   offers = (query: URLSearchParams) =>
     this.request<ScoredOffer[]>(`/offers?${query}`);

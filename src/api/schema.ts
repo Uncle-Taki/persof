@@ -70,7 +70,8 @@ export interface paths {
         delete: operations["deleteInterest"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update personal healthcare interest filters */
+        patch: operations["updateInterest"];
         trace?: never;
     };
     "/api/v1/watch-sources": {
@@ -118,7 +119,8 @@ export interface paths {
         /** List canonical products */
         get: operations["listProducts"];
         put?: never;
-        post?: never;
+        /** Create a healthcare catalog product */
+        post: operations["createProduct"];
         delete?: never;
         options?: never;
         head?: never;
@@ -139,7 +141,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update a healthcare catalog product */
+        patch: operations["updateProduct"];
         trace?: never;
     };
     "/api/v1/products/{id}/statistics": {
@@ -767,12 +770,48 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
+            normalized_name?: string;
             brand: string;
+            manufacturer?: string;
             model: string;
             category: string;
             attributes: {
                 [key: string]: unknown;
             };
+            unit?: string;
+            pack_size?: number;
+            prescription_required?: boolean;
+            expiry_required?: boolean;
+        };
+        CreateProductRequest: {
+            name: string;
+            normalized_name?: string;
+            brand?: string;
+            manufacturer?: string;
+            model?: string;
+            category: string;
+            attributes?: {
+                [key: string]: unknown;
+            };
+            unit?: string;
+            pack_size?: number;
+            prescription_required?: boolean;
+            expiry_required?: boolean;
+        };
+        UpdateProductRequest: {
+            name?: string;
+            normalized_name?: string;
+            brand?: string;
+            manufacturer?: string;
+            model?: string;
+            category?: string;
+            attributes?: {
+                [key: string]: unknown;
+            };
+            unit?: string;
+            pack_size?: number;
+            prescription_required?: boolean;
+            expiry_required?: boolean;
         };
         Offer: {
             /** Format: uuid */
@@ -829,7 +868,21 @@ export interface components {
             user_id: string;
             buy_enabled: boolean;
             sell_enabled: boolean;
+            max_price_amount?: number;
+            min_quantity?: number;
+            preferred_city?: string;
+            required_attributes?: {
+                [key: string]: unknown;
+            };
             product?: components["schemas"]["Product"];
+        };
+        UpdateInterestRequest: {
+            max_price_amount?: number | null;
+            min_quantity?: number | null;
+            preferred_city?: string;
+            required_attributes?: {
+                [key: string]: unknown;
+            };
         };
         TelegramSource: {
             /** Format: uuid */
@@ -1009,12 +1062,56 @@ export interface operations {
                 "application/json": {
                     /** Format: uuid */
                     product_id: string;
+                    max_price_amount?: number;
+                    min_quantity?: number;
+                    preferred_city?: string;
+                    required_attributes?: {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
         responses: {
             /** @description Interest created (Phase 1: buy_enabled=true, sell_enabled=false) */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateInterest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInterestRequest"];
+            };
+        };
+        responses: {
+            /** @description Interest filters updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid filter values */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Interest not found or not owned by the user */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1132,6 +1229,35 @@ export interface operations {
             };
         };
     };
+    createProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Product created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Administrator access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getProduct: {
         parameters: {
             query?: never;
@@ -1145,6 +1271,44 @@ export interface operations {
         responses: {
             /** @description Product details */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description Product updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Administrator access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Product not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
