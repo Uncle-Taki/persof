@@ -19,6 +19,8 @@ interface PriceComparisonPageProps {
   onSelectProductId: (id: string) => void;
   onStartChat: (offer: Offer) => void;
   onViewProductDetails: (productId: string, offerId?: string) => void;
+  isLive?: boolean;
+  canStartChat?: boolean;
 }
 
 export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
@@ -29,6 +31,8 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
   onSelectProductId,
   onStartChat,
   onViewProductDetails,
+  isLive = false,
+  canStartChat = true,
 }) => {
   const isFa = lang === 'fa';
   const [cityFilter, setCityFilter] = useState<'all' | 'tehran'>('all');
@@ -42,7 +46,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
       if (cityFilter === 'tehran' && o.cityFa !== 'تهران') return false;
       return true;
     });
-    return [...list].sort((a, b) => a.priceToman - b.priceToman);
+    return [...list].sort((a, b) => (a.priceToman ?? Number.POSITIVE_INFINITY) - (b.priceToman ?? Number.POSITIVE_INFINITY));
   }, [offers, currentProduct.id, cityFilter]);
 
   const lowestOffer = matchingOffers[0];
@@ -60,9 +64,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
                   ? 'مقایسه هوشمند قیمت فروشندگان تلگرام'
                   : 'Intelligent Telegram Seller Price Comparison'}
               </h1>
-              <span className="px-2 py-0.5 rounded-md bg-white/80 text-[10px] font-bold text-[#477D72]">
-                {isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}
-              </span>
+              {!isLive && <span className="px-2 py-0.5 rounded-md bg-white/80 text-[10px] font-bold text-[#477D72]">{isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}</span>}
             </div>
             <p className="text-xs text-[#263D38]/80 mt-0.5">
               {isFa
@@ -150,10 +152,9 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
             {isFa ? 'کمترین قیمت شناسایی‌شده (بهترین پیشنهاد)' : 'Lowest Identified Price'}
           </div>
           <div className="text-xl font-extrabold text-[#477D72] tabular-nums-fa mt-1">
-            {formatPrice(
-              lowestOffer ? lowestOffer.priceToman : currentProduct.minMarketPriceToman,
-              lang
-            )}
+            {(lowestOffer?.priceToman ?? currentProduct.minMarketPriceToman) > 0
+              ? formatPrice(lowestOffer?.priceToman ?? currentProduct.minMarketPriceToman, lang)
+              : (isFa ? 'قیمت ثبت نشده' : 'No price data')}
           </div>
           <div className="text-[11px] text-[#718780] mt-1">
             {lowestOffer
@@ -169,7 +170,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
             {isFa ? 'میانگین قیمت در کانال‌های تلگرام' : 'Average Price Across Channels'}
           </div>
           <div className="text-xl font-extrabold text-[#263D38] tabular-nums-fa mt-1">
-            {formatPrice(currentProduct.avgMarketPriceToman, lang)}
+            {currentProduct.avgMarketPriceToman > 0 ? formatPrice(currentProduct.avgMarketPriceToman, lang) : '—'}
           </div>
           <div className="text-[11px] text-[#718780] mt-1">
             {isFa
@@ -184,14 +185,9 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
             <span>{isFa ? 'صرفه‌جویی خرید از بهترین پیشنهاد' : 'Savings with Best Offer'}</span>
           </div>
           <div className="text-xl font-extrabold text-[#263D38] tabular-nums-fa mt-1">
-            {formatPrice(
-              Math.max(
-                0,
-                currentProduct.maxMarketPriceToman -
-                  (lowestOffer ? lowestOffer.priceToman : currentProduct.minMarketPriceToman)
-              ),
-              lang
-            )}
+            {currentProduct.maxMarketPriceToman > 0 && (lowestOffer?.priceToman ?? currentProduct.minMarketPriceToman) > 0
+              ? formatPrice(Math.max(0, currentProduct.maxMarketPriceToman - (lowestOffer?.priceToman ?? currentProduct.minMarketPriceToman)), lang)
+              : '—'}
           </div>
           <div className="text-[11px] text-[#477D72] font-bold mt-1">
             {isFa ? 'در هر واحد نسبت به سقف بازار نمونه' : 'Per unit vs max sample price'}
@@ -266,9 +262,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
                             <BadgeCheck className="w-4 h-4 text-[#5F978B]" />
                           )}
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-[#F5F0DE] text-[10px] font-bold text-[#718780]">
-                          {isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}
-                        </span>
+                        {!isLive && <span className="px-2 py-0.5 rounded-md bg-[#F5F0DE] text-[10px] font-bold text-[#718780]">{isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}</span>}
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
@@ -292,7 +286,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
                             {isFa ? 'حداقل سفارش و وضعیت:' : 'Min Order & Status:'}
                           </span>
                           <span className="font-bold text-[#263D38] block mt-0.5 tabular-nums-fa">
-                            {formatNumber(off.minOrderQty, lang)} {isFa ? off.unitFa : off.unitEn} ·{' '}
+                            {off.minOrderQty != null ? `${formatNumber(off.minOrderQty, lang)} ${isFa ? off.unitFa : off.unitEn}` : (isFa ? 'مقدار اعلام نشده' : 'Quantity not provided')} ·{' '}
                             <span className="text-[#477D72]">
                               {isFa ? statusInfo.fa : statusInfo.en}
                             </span>
@@ -325,7 +319,7 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
                     <div className="md:w-52 shrink-0 flex md:flex-col items-center md:items-end justify-between gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[#E1EBE5]">
                       <div className="text-end">
                         <div className="text-xl font-extrabold text-[#263D38] tabular-nums-fa">
-                          {formatPrice(off.priceToman, lang)}
+                          {off.priceToman != null ? formatPrice(off.priceToman, lang) : (isFa ? 'قیمت اعلام نشده' : 'Price not listed')}
                         </div>
                         {diffPercent > 0 ? (
                           <span className="inline-block text-[11px] font-bold text-[#477D72] bg-[#D9EEE5] px-2 py-0.5 rounded-md mt-0.5 tabular-nums-fa">
@@ -340,14 +334,14 @@ export const PriceComparisonPage: React.FC<PriceComparisonPageProps> = ({
                       </div>
 
                       {!off.isPrescriptionOnly && (
-                        <button
+                        {canStartChat && <button
                           type="button"
                           onClick={() => onStartChat(off)}
                           className="min-h-[38px] px-4 rounded-xl bg-[#5F978B] hover:bg-[#477D72] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           <span>{isFa ? 'شروع گفتگو با فروشنده' : 'Chat with Seller'}</span>
-                        </button>
+                        </button>}
                       )}
                     </div>
                   </div>

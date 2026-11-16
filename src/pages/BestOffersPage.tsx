@@ -37,6 +37,10 @@ interface BestOffersPageProps {
   onToggleInterest: (productId: string) => void;
   onStartChat: (offer: Offer) => void;
   onNavigate: (screen: ScreenId) => void;
+  isLive?: boolean;
+  canStartChat?: boolean;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 type SortOption = 'match_desc' | 'price_asc' | 'price_desc' | 'newest';
@@ -54,6 +58,10 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
   onToggleInterest,
   onStartChat,
   onNavigate,
+  isLive = false,
+  canStartChat = true,
+  onRefresh,
+  refreshing = false,
 }) => {
   const ui = getUI(lang);
   const isFa = lang === 'fa';
@@ -115,8 +123,8 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
 
     return [...list].sort((a, b) => {
       if (sortBy === 'match_desc') return b.matchScore - a.matchScore;
-      if (sortBy === 'price_asc') return a.priceToman - b.priceToman;
-      if (sortBy === 'price_desc') return b.priceToman - a.priceToman;
+      if (sortBy === 'price_asc') return (a.priceToman ?? Number.POSITIVE_INFINITY) - (b.priceToman ?? Number.POSITIVE_INFINITY);
+      if (sortBy === 'price_desc') return (b.priceToman ?? -1) - (a.priceToman ?? -1);
       return a.postedMinutesAgo - b.postedMinutesAgo;
     });
   }, [offers, searchQuery, selectedCategory, selectedCity, sortBy, showRxRestricted]);
@@ -139,9 +147,11 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-[#477D72]" />
                 <span>{ui.welcome.greeting}</span>
               </span>
+              {!isLive && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/80 text-[#477D72] border border-[#A9D5C5]">
                 {ui.sampleDataBadge}
               </span>
+            )}
             </div>
             <p className="text-[11px] sm:text-xs text-[#263D38]/85 mt-0.5 leading-snug">
               {ui.welcome.desc}
@@ -176,10 +186,10 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
             </div>
             <div className="bg-white/85 rounded-xl px-2 py-1 border border-[#E1EBE5] text-center">
               <div className="text-xs sm:text-sm font-extrabold text-[#477D72] tabular-nums-fa">
-                {formatPercent(96, lang)}
+                {isLive ? '—' : formatPercent(96, lang)}
               </div>
               <div className="text-[9.5px] sm:text-[10px] text-[#718780] truncate">
-                {isFa ? 'دقت تطبیق' : 'Precision'}
+                {isLive ? (isFa ? 'دقت محاسبه نشده' : 'Not measured') : (isFa ? 'دقت تطبیق' : 'Precision')}
               </div>
             </div>
           </div>
@@ -251,11 +261,11 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
           {/* Simulated Refresh Button */}
           <button
             type="button"
-            onClick={handleManualSync}
+            onClick={() => (isLive ? onRefresh?.() : handleManualSync())}
             className="h-9 w-9 rounded-xl bg-white hover:bg-[#D9EEE5] border border-[#E1EBE5] flex items-center justify-center text-[#477D72] transition-colors cursor-pointer shrink-0"
-            title={isFa ? 'به‌روزرسانی نمونه پیشنهادها' : 'Refresh sample offers'}
+            title={isLive ? (isFa ? 'به‌روزرسانی داده‌های زنده' : 'Refresh live data') : (isFa ? 'به‌روزرسانی نمونه پیشنهادها' : 'Refresh sample offers')}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSimulatingSync ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isSimulatingSync || refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
@@ -398,8 +408,8 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-extrabold text-[#263D38]">
               {isFa
-                ? `کاتالوگ کامل محصولات سلامت (${formatNumber(products.length, lang)} کالا — داده نمونه آزمایشی)`
-                : `Complete Healthcare Product Catalog (${products.length} items — Sample Test Data)`}
+                ? `کاتالوگ محصولات سلامت (${formatNumber(products.length, lang)} کالا${isLive ? '' : ' — داده نمونه آزمایشی'})`
+                : `Healthcare Product Catalog (${products.length} items${isLive ? '' : ' — Sample Test Data'})`}
             </h2>
             <button
               type="button"
@@ -506,6 +516,7 @@ export const BestOffersPage: React.FC<BestOffersPageProps> = ({
               onComparePrices={onComparePrices}
               onToggleInterest={onToggleInterest}
               onStartChat={onStartChat}
+              canStartChat={canStartChat}
             />
           ))}
         </section>

@@ -28,6 +28,8 @@ interface ProductDetailsPageProps {
   onStartChat: (offer: Offer) => void;
   onSelectSource: (sourceId: string) => void;
   onNavigate: (screen: ScreenId) => void;
+  isLive?: boolean;
+  canStartChat?: boolean;
 }
 
 export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
@@ -40,9 +42,11 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   onComparePrices,
   onStartChat,
   onSelectSource,
+  isLive = false,
+  canStartChat = true,
 }) => {
   const isFa = lang === 'fa';
-  const catLabel = CATEGORY_LABELS[product.category];
+  const catLabel = CATEGORY_LABELS[product.category] || CATEGORY_LABELS.other;
 
   const primaryOffer =
     productOffers.find((o) => o.id === selectedOfferId) || productOffers[0];
@@ -50,19 +54,19 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-6 pt-3 pb-24 space-y-4">
       {/* Sample Data Banner */}
-      <div className="rounded-xl bg-[#F5F0DE] border border-[#E1EBE5] px-3 py-2 flex items-center justify-between gap-2 text-xs text-[#263D38]">
-        <div className="flex items-center gap-1.5 font-semibold">
-          <Sparkles className="w-4 h-4 text-[#477D72] shrink-0" />
-          <span>
-            {isFa
-              ? '«داده نمونه آزمایشی» — مشخصات، قیمت‌ها و فروشندگان این محصول صرفاً جهت نمایش عملکرد پایشگر پرسو تولید شده‌اند.'
-              : '«Sample Test Data» — Specifications, prices, and sellers are generated for prototype demonstration only.'}
-          </span>
+      {!isLive && (
+        <div className="rounded-xl bg-[#F5F0DE] border border-[#E1EBE5] px-3 py-2 flex items-center justify-between gap-2 text-xs text-[#263D38]">
+          <div className="flex items-center gap-1.5 font-semibold">
+            <Sparkles className="w-4 h-4 text-[#477D72] shrink-0" />
+            <span>
+              {isFa
+                ? '«داده نمونه آزمایشی» — مشخصات، قیمت‌ها و فروشندگان این محصول صرفاً جهت نمایش عملکرد پایشگر پرسو تولید شده‌اند.'
+                : '«Sample Test Data» — Specifications, prices, and sellers are generated for prototype demonstration only.'}
+            </span>
+          </div>
+          {product.ircCode && <span className="bidi-ltr text-[11px] font-mono text-[#718780] shrink-0">{product.ircCode}</span>}
         </div>
-        <span className="bidi-ltr text-[11px] font-mono text-[#718780] shrink-0">
-          {product.ircCode}
-        </span>
-      </div>
+      )}
 
       {/* Main Product Identity & Market Price Overview Card */}
       <section className="rounded-3xl bg-white border border-[#E1EBE5] p-4 sm:p-6 shadow-xs">
@@ -114,10 +118,10 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
             <div>
               <div className="flex items-center justify-between text-xs text-[#477D72] font-bold">
                 <span>{isFa ? 'بهترین قیمت استخراج‌شده' : 'Best Extracted Price'}</span>
-                <span>{isFa ? '«داده نمونه آزمایشی»' : '«Sample Data»'}</span>
+                {!isLive && <span>{isFa ? '«داده نمونه آزمایشی»' : '«Sample Data»'}</span>}
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold text-[#263D38] tabular-nums-fa mt-1">
-                {formatPrice(product.minMarketPriceToman, lang)}
+                {product.minMarketPriceToman > 0 ? formatPrice(product.minMarketPriceToman, lang) : (isFa ? 'قیمت ثبت نشده' : 'No price data')}
               </div>
               <div className="text-xs text-[#477D72] mt-0.5">
                 {isFa ? `به ازای هر ${product.unitFa}` : `per ${product.unitEn}`}
@@ -130,7 +134,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                   {isFa ? 'میانگین بازار نمونه:' : 'Sample Market Avg:'}
                 </span>
                 <span className="font-bold text-[#263D38] tabular-nums-fa">
-                  {formatPrice(product.avgMarketPriceToman, lang)}
+                  {product.avgMarketPriceToman > 0 ? formatPrice(product.avgMarketPriceToman, lang) : '—'}
                 </span>
               </div>
               <div>
@@ -138,7 +142,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                   {isFa ? 'سقف قیمت ثبت‌شده:' : 'Max Observed:'}
                 </span>
                 <span className="font-bold text-[#263D38] tabular-nums-fa">
-                  {formatPrice(product.maxMarketPriceToman, lang)}
+                  {product.maxMarketPriceToman > 0 ? formatPrice(product.maxMarketPriceToman, lang) : '—'}
                 </span>
               </div>
             </div>
@@ -201,7 +205,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
       </section>
 
       {/* Extracted Telegram Message Intelligence Section */}
-      {primaryOffer && (
+      {primaryOffer && (primaryOffer.sourceId || primaryOffer.rawTelegramExcerptFa || primaryOffer.rawTelegramExcerptEn) && (
         <section className="rounded-2xl bg-[#E8F0F8]/70 border border-[#E1EBE5] p-4 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#263D38]">
@@ -212,17 +216,17 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                   : 'Extracted Telegram Post Excerpt (Perso AI Parser)'}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => onSelectSource(primaryOffer.sourceId)}
-              className="text-xs font-bold text-[#477D72] hover:underline cursor-pointer"
-            >
-              {isFa ? primaryOffer.sourceTitleFa : primaryOffer.sourceTitleEn} ←
-            </button>
+            {primaryOffer.sourceId && (
+              <button type="button" onClick={() => onSelectSource(primaryOffer.sourceId!)} className="text-xs font-bold text-[#477D72] hover:underline cursor-pointer">
+                {isFa ? primaryOffer.sourceTitleFa : primaryOffer.sourceTitleEn} ←
+              </button>
+            )}
           </div>
-          <blockquote className="p-3 rounded-xl bg-white border border-[#E1EBE5] text-xs text-[#263D38] leading-relaxed">
-            «{isFa ? primaryOffer.rawTelegramExcerptFa : primaryOffer.rawTelegramExcerptEn}»
-          </blockquote>
+          {(primaryOffer.rawTelegramExcerptFa || primaryOffer.rawTelegramExcerptEn) && (
+            <blockquote className="p-3 rounded-xl bg-white border border-[#E1EBE5] text-xs text-[#263D38] leading-relaxed">
+              «{isFa ? primaryOffer.rawTelegramExcerptFa : primaryOffer.rawTelegramExcerptEn}»
+            </blockquote>
+          )}
         </section>
       )}
 
@@ -234,9 +238,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
               ? `فروشندگان و پیشنهادهای فعال این محصول (${formatNumber(productOffers.length, lang)} مورد)`
               : `Active Sellers & Offers for this Product (${productOffers.length})`}
           </h2>
-          <span className="text-xs text-[#718780]">
-            {isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}
-          </span>
+          {!isLive && <span className="text-xs text-[#718780]">{isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}</span>}
         </div>
 
         <div className="space-y-2.5">
@@ -254,9 +256,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                       <span>{isFa ? off.sellerNameFa : off.sellerNameEn}</span>
                       {off.sellerVerified && <BadgeCheck className="w-4 h-4 text-[#5F978B]" />}
                     </span>
-                    <span className="bidi-ltr text-xs text-[#477D72] font-mono">
-                      {off.sellerTelegramHandle}
-                    </span>
+                    {off.sellerTelegramHandle && <span className="bidi-ltr text-xs text-[#477D72] font-mono">{off.sellerTelegramHandle}</span>}
                     <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${st.bg} ${st.text}`}>
                       {isFa ? st.fa : st.en}
                     </span>
@@ -277,7 +277,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                     <span>
                       {isFa ? 'حداقل سفارش:' : 'Min Order:'}{' '}
                       <strong className="text-[#263D38] tabular-nums-fa">
-                        {formatNumber(off.minOrderQty, lang)} {isFa ? off.unitFa : off.unitEn}
+                        {off.minOrderQty != null ? `${formatNumber(off.minOrderQty, lang)} ${isFa ? off.unitFa : off.unitEn}` : (isFa ? 'اعلام نشده' : 'Not specified')}
                       </strong>
                     </span>
                     <span>·</span>
@@ -300,7 +300,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                 <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-[#E1EBE5]">
                   <div className="text-end">
                     <div className="text-lg font-extrabold text-[#263D38] tabular-nums-fa">
-                      {formatPrice(off.priceToman, lang)}
+                      {off.priceToman != null ? formatPrice(off.priceToman, lang) : (isFa ? 'قیمت اعلام نشده' : 'Price not listed')}
                     </div>
                     <div className="text-[10px] text-[#718780]">
                       {isFa ? off.postedAtFa : off.postedAtEn}
@@ -308,14 +308,14 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                   </div>
 
                   {!off.isPrescriptionOnly ? (
-                    <button
+                    {canStartChat && <button
                       type="button"
                       onClick={() => onStartChat(off)}
                       className="min-h-[36px] px-3.5 rounded-xl bg-[#5F978B] hover:bg-[#477D72] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>{isFa ? 'گفتگو و استعلام خرید' : 'Message Seller'}</span>
-                    </button>
+                    </button>}
                   ) : (
                     <span className="px-2.5 py-1 rounded-lg bg-[#F7EAE2] text-[#263D38] text-[11px] font-bold">
                       {isFa ? 'نیازمند احراز مجوز داروخانه' : 'Pharmacy License Required'}

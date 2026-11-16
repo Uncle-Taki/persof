@@ -17,6 +17,7 @@ interface HeaderProps {
   currentScreen: ScreenId;
   onNavigate: (screen: ScreenId) => void;
   onBack?: () => void;
+  canManageSources?: boolean;
 }
 
 const SUB_SCREENS: Record<ScreenId, { fa: string; en: string } | null> = {
@@ -39,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentScreen,
   onNavigate,
   onBack,
+  canManageSources = true,
 }) => {
   const ui = getUI(lang);
   const isFa = lang === 'fa';
@@ -121,6 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Plus className="w-3.5 h-3.5" />
           <span>{isFa ? 'افزودن محصول' : 'Add Product'}</span>
         </button>
+        {canManageSources && (
         <button
           type="button"
           onClick={() => onNavigate('add_telegram_source')}
@@ -131,6 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Plus className="w-3.5 h-3.5" />
           <span>{isFa ? 'افزودن منبع تلگرام' : 'Add Telegram Source'}</span>
         </button>
+        )}
       </nav>
 
       {/* Zone 3: Mode Status & Language Switcher */}
@@ -160,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onToggleLang}
           className="min-h-[34px] px-2.5 py-1 rounded-lg bg-[#F7FAF8] hover:bg-[#D9EEE5] border border-[#E1EBE5] text-[11px] font-bold text-[#263D38] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-          aria-label={isFa ? 'تغییر زبان به انگلیسی' : 'Switch language to Persian'}
+          aria-label={isFa ? 'تغییر زبان' : 'Change language'}
         >
           <Globe className="w-3.5 h-3.5 text-[#5F978B]" />
           <span>{isFa ? 'EN' : 'فارسی'}</span>

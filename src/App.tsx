@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
 const DemoApp = lazy(() => import("./DemoApp"));
-import { LiveApp } from "./live/LiveApp";
+import { HealthcareLiveApp } from "./live/HealthcareLiveApp";
 
 // Demo fixtures never become an implicit fallback for a failing live API.
 export default function App() {
@@ -14,6 +14,6 @@ export default function App() {
       </Suspense>
     </>
   ) : (
-    <LiveApp />
+    <HealthcareLiveApp />
   );
 }

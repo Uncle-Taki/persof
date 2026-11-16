@@ -117,7 +117,10 @@ export class ApiClient {
       body: JSON.stringify({ password }),
     });
   session = () => this.request<Session>("/session");
-  products = () => this.request<CatalogProduct[]>("/products?limit=100");
+  products = (query: URLSearchParams = new URLSearchParams({ limit: "100" })) =>
+    this.request<CatalogProduct[]>(`/products?${query}`);
+  product = (id: string) => this.request<CatalogProduct>(`/products/${id}`);
+  offer = (id: string) => this.request<ScoredOffer>(`/offers/${id}`);
   createProduct = (data: components["schemas"]["CreateProductRequest"]) =>
     this.request<CatalogProduct>("/products", { method: "POST", body: JSON.stringify(data) });
   updateProduct = (id: string, data: components["schemas"]["UpdateProductRequest"]) =>
@@ -126,6 +129,7 @@ export class ApiClient {
     this.request<ScoredOffer[]>(`/offers?${query}`);
   interests = () => this.request<Interest[]>("/interests");
   sources = () => this.request<Source[]>("/sources");
+  source = (id: string) => this.request<Source>(`/sources/${id}`);
   assignments = (id: string) =>
     this.request<SourceAssignments>(`/sources/${id}/assignments`);
   replaceAssignments = (id: string, buyer_ids: string[], version: number) =>

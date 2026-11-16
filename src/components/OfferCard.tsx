@@ -19,6 +19,7 @@ interface OfferCardProps {
   onComparePrices: (productId: string) => void;
   onToggleInterest: (productId: string) => void;
   onStartChat: (offer: Offer) => void;
+  canStartChat?: boolean;
 }
 
 export const OfferCard: React.FC<OfferCardProps> = ({
@@ -29,6 +30,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({
   onComparePrices,
   onToggleInterest,
   onStartChat,
+  canStartChat = true,
 }) => {
   const isFa = lang === 'fa';
   const statusInfo = STATUS_LABELS[offer.status];
@@ -36,7 +38,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({
 
   return (
     <article
-      className={`rounded-2xl bg-white border transition-all duration-150 p-2.5 sm:p-3.5 shadow-[0_1px_4px_rgba(38,61,56,0.04)] hover:border-[#5F978B] ${
+      className={`live-offer rounded-2xl bg-white border transition-all duration-150 p-2.5 sm:p-3.5 shadow-[0_1px_4px_rgba(38,61,56,0.04)] hover:border-[#5F978B] ${
         offer.isPrescriptionOnly
           ? 'border-[#F7EAE2] bg-[#F7EAE2]/20'
           : 'border-[#E1EBE5]'
@@ -69,14 +71,20 @@ export const OfferCard: React.FC<OfferCardProps> = ({
         <div className="shrink-0 text-end">
           <div className="px-2.5 py-1 rounded-xl bg-gradient-main-mint border border-[#A9D5C5]/70 shadow-2xs">
             <div className="text-[15px] sm:text-[17px] font-extrabold text-[#263D38] tabular-nums-fa leading-none">
-              {formatNumber(offer.priceToman, lang)}
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#477D72] ms-1">
-                {isFa ? 'تومان' : 'Toman'}
-              </span>
+              {offer.priceToman != null
+                ? formatNumber(offer.priceToman, lang)
+                : isFa ? 'قیمت اعلام نشده' : 'Price not listed'}
+              {offer.priceToman != null && (
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#477D72] ms-1">
+                  {isFa ? 'تومان' : 'Toman'}
+                </span>
+              )}
             </div>
-            <div className="text-[9.5px] text-[#477D72] font-medium mt-0.5 leading-none">
-              {isFa ? `هر ${offer.unitFa}` : `per ${offer.unitEn}`}
-            </div>
+            {offer.priceToman != null && (
+              <div className="text-[9.5px] text-[#477D72] font-medium mt-0.5 leading-none">
+                {isFa ? `هر ${offer.unitFa}` : `per ${offer.unitEn}`}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -108,9 +116,11 @@ export const OfferCard: React.FC<OfferCardProps> = ({
           <span className="px-1.5 py-0.5 rounded-md bg-[#E8F0F8] text-[#263D38] font-bold tabular-nums-fa">
             {formatPercent(offer.matchScore, lang)} {isFa ? 'تطبیق' : 'Match'}
           </span>
-          <span className="text-[10px] font-semibold text-[#718780] bg-[#F5F0DE] px-1.5 py-0.5 rounded-md">
-            {isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}
-          </span>
+          {offer.isSampleData && (
+            <span className="text-[10px] font-semibold text-[#718780] bg-[#F5F0DE] px-1.5 py-0.5 rounded-md">
+              {isFa ? '«داده نمونه آزمایشی»' : '«Sample Test Data»'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -135,9 +145,11 @@ export const OfferCard: React.FC<OfferCardProps> = ({
             )}
             <span className="truncate">{isFa ? offer.sellerNameFa : offer.sellerNameEn}</span>
           </span>
-          <span className="bidi-ltr text-[10px] text-[#477D72] hidden md:inline">
-            {offer.sellerTelegramHandle}
-          </span>
+          {offer.sellerTelegramHandle && (
+            <span className="bidi-ltr text-[10px] text-[#477D72] hidden md:inline">
+              {offer.sellerTelegramHandle}
+            </span>
+          )}
           <span>·</span>
           <span className="tabular-nums-fa whitespace-nowrap">
             {isFa ? offer.postedAtFa : offer.postedAtEn}
@@ -176,7 +188,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({
             {isFa ? 'جزئیات' : 'Details'}
           </button>
 
-          {!offer.isPrescriptionOnly && (
+          {canStartChat && !offer.isPrescriptionOnly && (
             <button
               type="button"
               onClick={() => onStartChat(offer)}

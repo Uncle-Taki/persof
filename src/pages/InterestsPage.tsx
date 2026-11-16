@@ -23,6 +23,7 @@ interface InterestsPageProps {
   onSelectProduct: (productId: string) => void;
   onComparePrices: (productId: string) => void;
   onNavigate: (screen: ScreenId) => void;
+  isLive?: boolean;
 }
 
 export const InterestsPage: React.FC<InterestsPageProps> = ({
@@ -34,6 +35,7 @@ export const InterestsPage: React.FC<InterestsPageProps> = ({
   onSelectProduct,
   onComparePrices,
   onNavigate,
+  isLive = false,
 }) => {
   const isFa = lang === 'fa';
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -130,6 +132,7 @@ export const InterestsPage: React.FC<InterestsPageProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                    {!isLive && (
                       <button
                         type="button"
                         onClick={() => onToggleNotify(item.id)}
@@ -154,6 +157,7 @@ export const InterestsPage: React.FC<InterestsPageProps> = ({
                           <BellOff className="w-4 h-4" />
                         )}
                       </button>
+                    )}
 
                       <button
                         type="button"
@@ -215,7 +219,7 @@ export const InterestsPage: React.FC<InterestsPageProps> = ({
                         {isFa ? 'بهترین قیمت فعلی تلگرام:' : 'Current Best Offer:'}
                       </span>
                       <div className="text-sm font-extrabold text-[#263D38] tabular-nums-fa mt-0.5">
-                        {formatPrice(item.currentBestPriceToman, lang)}
+                        {item.currentBestPriceToman != null && item.currentBestPriceToman > 0 ? formatPrice(item.currentBestPriceToman, lang) : (isFa ? 'هنوز مشاهده نشده' : 'Not observed yet')}
                       </div>
                     </div>
                   </div>
@@ -265,8 +269,8 @@ export const InterestsPage: React.FC<InterestsPageProps> = ({
                       className="min-h-[34px] px-3 rounded-xl bg-[#5F978B] hover:bg-[#477D72] text-xs font-bold text-white cursor-pointer"
                     >
                       {isFa
-                        ? `مشاهده (${formatNumber(item.matchedOffersCount, lang)})`
-                        : `View (${item.matchedOffersCount})`}
+                        ? `مشاهده${item.matchedOffersCount != null ? ` (${formatNumber(item.matchedOffersCount, lang)})` : ''}`
+                        : `View${item.matchedOffersCount != null ? ` (${item.matchedOffersCount})` : ''}`}
                     </button>
                   </div>
                 </div>

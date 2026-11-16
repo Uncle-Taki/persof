@@ -1,0 +1,42 @@
+/* Server-backed healthcare screens: clinical mint visual system. */
+.hc-session-strip{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:7px 16px;background:#f7faf8;border-bottom:1px solid #e1ebe5;color:#718780;font-size:11px;flex-wrap:wrap}
+.hc-session-strip button{border:1px solid #d8e6df;background:#fff;border-radius:9px;padding:5px 10px;color:#263d38;font-weight:700;cursor:pointer}
+.hc-connection{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;background:#d9eee5;color:#315e54;font-weight:800}
+.hc-state{max-width:920px;margin:28px auto;padding:18px;border:1px solid #e1ebe5;border-radius:18px;background:#fff;color:#263d38;text-align:center;font-size:13px;line-height:1.8}
+.hc-error,.hc-action-error{border-color:#e6c6ba;background:#fff8f5;color:#8a4634}
+.hc-state button{margin-top:10px;border:0;border-radius:10px;background:#477d72;color:white;padding:8px 16px;font-weight:700;cursor:pointer}
+.hc-notice{max-width:1100px;margin:12px auto 0;padding:9px 13px;border:1px solid #a9d5c5;border-radius:12px;background:#eff8f3;color:#315e54;font-size:12px}
+.hc-action-error{max-width:1100px;margin:12px auto 0;padding:9px 13px;border:1px solid #e6c6ba;border-radius:12px;font-size:12px}
+.hc-field{display:flex;flex-direction:column;gap:6px;color:#405b53;font-size:12px;font-weight:700}
+.hc-field input,.hc-field select{width:100%;min-height:40px;border:1px solid #dce8e2;border-radius:11px;background:#fbfdfc;padding:8px 10px;color:#263d38;font:inherit;font-weight:500;outline:none}
+.hc-field input:focus,.hc-field select:focus,.hc-search:focus{border-color:#5f978b;box-shadow:0 0 0 3px rgba(95,151,139,.12)}
+.hc-check{display:flex;align-items:center;gap:8px;color:#405b53;font-size:12px;font-weight:600}
+.hc-check input{accent-color:#477d72;width:16px;height:16px}
+.hc-search{min-width:180px;min-height:38px;border:1px solid #dce8e2;border-radius:11px;background:white;padding:8px 11px;color:#263d38;font-size:12px;outline:none}
+.hc-empty{padding:18px;border:1px dashed #c8ddd3;border-radius:14px;background:#fbfdfc;color:#718780;text-align:center;font-size:12px;line-height:1.8}
+.hc-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #edf2ef}
+.hc-row-main{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:4px;text-align:start;color:#263d38}
+.hc-row-main strong{font-size:13px;font-weight:800}
+.hc-row-main span{font-size:11px;color:#718780;overflow-wrap:anywhere}
+.hc-source-card{border:1px solid #e1ebe5;border-radius:18px;background:white;padding:15px;display:flex;flex-direction:column;gap:12px}
+.hc-state-pill{display:inline-flex;align-items:center;max-width:max-content;border-radius:999px;background:#edf4f0;color:#477d72;padding:4px 9px;font-size:10px;font-weight:800;overflow-wrap:anywhere}
+.hc-state-active{background:#d9eee5;color:#315e54}
+.hc-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;color:#627a72;font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+.hc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hc-danger{border:1px solid #e6c6ba;border-radius:10px;background:#fff8f5;color:#8a4634;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer}
+.hc-conversation-card{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:7px;border:1px solid #e1ebe5;border-radius:16px;background:#fff;padding:14px;text-align:start;color:#263d38;cursor:pointer}
+.hc-conversation-card:hover,.hc-source-card:hover{border-color:#a9d5c5}
+.hc-conversation-card strong{font-size:13px}
+.hc-conversation-card>span:not(.hc-state-pill){font-size:11px;color:#718780}
+.hc-message{border:1px solid #e1ebe5;border-radius:13px;background:#fbfdfc;padding:11px;color:#405b53;font-size:12px;line-height:1.8}
+.hc-message time{font-size:10px;color:#8aa098}
+.hc-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:5px}
+.hc-readonly-note{border:1px solid #e7dfbd;border-radius:13px;background:#fbf7e9;padding:11px;color:#776d40;font-size:11px;line-height:1.8}
+.live-resolution{border-color:#a9d5c5}
+@media(max-width:640px){
+  .hc-session-strip{justify-content:space-between;padding:6px 10px;font-size:10px}
+  .hc-meta-grid{grid-template-columns:1fr}
+  .hc-list-row{align-items:flex-start;flex-direction:column}
+  .hc-list-row>.live-primary,.hc-list-row>.live-secondary,.hc-list-row>.hc-actions{width:100%}
+  .hc-search{width:100%}
+}

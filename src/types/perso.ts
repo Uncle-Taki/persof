@@ -7,14 +7,16 @@ export type ProductCategory =
   | 'medical_consumables' // ملزومات مصرفی پزشکی
   | 'health_monitoring'   // تجهیزات پایش سلامت
   | 'hygiene_products'    // محصولات بهداشتی
-  | 'supplements';        // مکمل‌ها
+  | 'supplements'         // مکمل‌ها
+  | 'other';              // دسته‌بندی ثبت‌نشده
 
 export type OfferStatus =
   | 'in_stock'            // موجود در انبار
   | 'immediate_dispatch'  // تحویل فوری
   | 'limited_stock'       // موجودی محدود
   | 'corporate_quota'     // سهمیه شرکتی
-  | 'rx_verification';    // نیازمند تایید مجوز داروخانه
+  | 'rx_verification'     // نیازمند تایید مجوز داروخانه
+  | 'unknown';            // وضعیت موجودی در داده منبع مشخص نیست
 
 export type TelegramPeerType =
   | 'broadcast_channel'   // کانال انتشار
@@ -40,9 +42,9 @@ export interface TelegramSource {
   isPublic: boolean;
   accessStatus: 'verified' | 'pending_join' | 'restricted';
   monitoringStatus: 'active' | 'paused' | 'error';
-  memberCount: number;
-  extractedOffersCount: number;
-  matchPrecisionPercent: number;
+  memberCount?: number;
+  extractedOffersCount?: number;
+  matchPrecisionPercent?: number;
   lastSyncedFa: string;
   lastSyncedEn: string;
   cityFocusFa: string;
@@ -65,7 +67,8 @@ export interface Product {
   category: ProductCategory;
   unitFa: string;
   unitEn: string;
-  ircCode: string; // کد نمونه IRC / شناسه کالا
+  ircCode?: string; // only show when supplied by a verified catalog source
+  isSampleData?: boolean;
   isPrescriptionOnly: boolean;
   regulatoryNoteFa?: string;
   regulatoryNoteEn?: string;
@@ -88,10 +91,11 @@ export interface Offer {
   modelSpecFa: string;
   modelSpecEn: string;
   category: ProductCategory;
-  priceToman: number;
+  priceToman?: number;
   unitFa: string;
   unitEn: string;
-  minOrderQty: number;
+  minOrderQty?: number;
+  availableQuantity?: number;
   cityFa: string;
   cityEn: string;
   tehranDistrictFa?: string;
@@ -110,13 +114,13 @@ export interface Offer {
   expiryDateSampleEn: string;
   paymentTermsFa: string;
   paymentTermsEn: string;
-  sourceId: string;
+  sourceId?: string;
   sourceTitleFa: string;
   sourceTitleEn: string;
   rawTelegramExcerptFa: string;
   rawTelegramExcerptEn: string;
   isPrescriptionOnly?: boolean;
-  isSampleData: true; // Always marked «داده نمونه آزمایشی»
+  isSampleData: boolean;
 }
 
 export interface WatchlistInterest {
@@ -128,12 +132,12 @@ export interface WatchlistInterest {
   brandModelEn: string;
   category: ProductCategory;
   targetMaxPriceToman: number;
-  currentBestPriceToman: number;
+  currentBestPriceToman?: number;
   preferredCityFa: string;
   preferredCityEn: string;
   requiredQty: number;
-  notifyOnDrop: boolean;
-  matchedOffersCount: number;
+  notifyOnDrop?: boolean;
+  matchedOffersCount?: number;
   createdAtFa: string;
   createdAtEn: string;
 }
@@ -153,7 +157,7 @@ export interface ConversationThread {
   productId: string;
   productNameFa: string;
   productNameEn: string;
-  offeredPriceToman: number;
+  offeredPriceToman?: number;
   unitFa: string;
   unitEn: string;
   sellerNameFa: string;
@@ -172,6 +176,10 @@ export interface ConversationThread {
   rawTelegramPostFa: string;
   rawTelegramPostEn: string;
   messages: ChatMessage[];
+  backendState?: string;
+  consentGranted?: boolean;
+  missingFields?: string[];
+  questionsAskedCount?: number;
 }
 
 export type ScreenId =

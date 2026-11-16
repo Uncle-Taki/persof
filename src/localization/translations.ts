@@ -29,6 +29,10 @@ export const CATEGORY_LABELS: Record<ProductCategory, { fa: string; en: string }
     fa: 'مکمل‌ها',
     en: 'Supplements',
   },
+  other: {
+    fa: 'سایر موارد',
+    en: 'Other',
+  },
 };
 
 export const STATUS_LABELS: Record<OfferStatus, { fa: string; en: string; bg: string; text: string }> = {
@@ -60,6 +64,12 @@ export const STATUS_LABELS: Record<OfferStatus, { fa: string; en: string; bg: st
     fa: 'نیازمند مجوز داروخانه',
     en: 'Pharmacy License Required',
     bg: 'bg-[#F7EAE2]',
+    text: 'text-[#263D38]',
+  },
+  unknown: {
+    fa: 'وضعیت موجودی اعلام نشده',
+    en: 'Stock status not provided',
+    bg: 'bg-[#F5F0DE]',
     text: 'text-[#263D38]',
   },
 };
