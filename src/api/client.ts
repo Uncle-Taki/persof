@@ -9,6 +9,14 @@ export type Session = components["schemas"]["Session"];
 export type Resolution = components["schemas"]["ResolveSourceResponse"];
 export type Account = components["schemas"]["Account"];
 export type Preferences = components["schemas"]["Preferences"];
+export type SourceAssignments = {
+  source_id: string;
+  workspace_id: string;
+  buyer_ids: string[];
+  version: number;
+  linked_peer_policy: "explicit";
+  linked_discussion_peer_id?: number | null;
+};
 export type Message = {
   id: string;
   sender: string;
@@ -112,6 +120,13 @@ export class ApiClient {
     this.request<ScoredOffer[]>(`/offers?${query}`);
   interests = () => this.request<Interest[]>("/interests");
   sources = () => this.request<Source[]>("/sources");
+  assignments = (id: string) =>
+    this.request<SourceAssignments>(`/sources/${id}/assignments`);
+  replaceAssignments = (id: string, buyer_ids: string[], version: number) =>
+    this.request<SourceAssignments>(`/sources/${id}/assignments`, {
+      method: "PUT",
+      body: JSON.stringify({ buyer_ids, version }),
+    });
   conversations = () =>
     this.request<Conversation[]>("/conversations?limit=100");
   gateway = () =>

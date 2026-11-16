@@ -71,7 +71,7 @@ test.describe("server-backed accounts", () => {
       buyer.getByLabel("Preferred city", { exact: true }),
     ).toHaveValue("تهران");
     expect((await context.request.get("/api/v1/users")).status()).toBe(403);
-    expect((await context.request.get("/api/v1/offers")).status()).toBe(403);
+    expect((await context.request.get("/api/v1/offers")).status()).toBe(200);
     await buyer.getByRole("button", { name: "Sign out", exact: true }).click();
     await expect(buyer.locator("#username")).toBeVisible();
     expect((await context.request.get("/api/v1/session")).status()).toBe(401);

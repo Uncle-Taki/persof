@@ -720,6 +720,48 @@
   align-items: center;
   gap: 5px;
 }
+.live-source-assignment {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.live-assignment-panel {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: min(310px, 80vw);
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 14px 30px #203b2a18;
+}
+.live-assignment-panel > small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.live-assignment-list {
+  display: grid;
+  gap: 7px;
+  max-height: 180px;
+  overflow: auto;
+  margin-bottom: 12px;
+}
+.live-assignment-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.live-assignment-list input {
+  width: 16px;
+  height: 16px;
+}
 .live-conversation-list {
   display: grid;
   gap: 12px;

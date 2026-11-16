@@ -23,7 +23,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { ApiClient, ApiError, type Offer, type Source } from "../api/client";
+import {
+  ApiClient,
+  ApiError,
+  type Offer,
+  type Source,
+  type SourceAssignments,
+} from "../api/client";
 import { useResource } from "./useResource";
 import "./live.css";
 import { AccountPanel } from "./AccountPanel";
@@ -95,6 +101,16 @@ export function LiveApp() {
   const [resolution, setResolution] = useState<
     Awaited<ReturnType<ApiClient["resolve"]>>["data"] | null
   >(null);
+  const [assignmentSource, setAssignmentSource] = useState<string | null>(null);
+  const [assignmentData, setAssignmentData] = useState<
+    Record<string, SourceAssignments>
+  >({});
+  const [assignmentDrafts, setAssignmentDrafts] = useState<
+    Record<string, string[]>
+  >({});
+  const [assignmentLoading, setAssignmentLoading] = useState<string | null>(
+    null,
+  );
   useEffect(() => {
     if (!confirmDelete) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -128,6 +144,9 @@ export function LiveApp() {
   const session = useResource(() => api.session(), [api, authVersion]);
   const ready = !!session.value && !session.error;
   const marketplace = ready && !!session.value?.data.marketplace_access;
+  const canAssignSources = ["admin", "super_admin"].includes(
+    session.value?.data.user?.role || "",
+  );
   useEffect(() => {
     sessionStorage.removeItem("perso.apiToken");
   }, []);
@@ -144,7 +163,16 @@ export function LiveApp() {
   const products = useResource(() => api.products(), [api, version], ready);
   const interests = useResource(() => api.interests(), [api, version], ready);
   const sources = useResource(() => api.sources(), [api, version], marketplace);
-  const gateway = useResource(() => api.gateway(), [api, version], marketplace);
+  const gateway = useResource(
+    () => api.gateway(),
+    [api, version],
+    marketplace && canAssignSources,
+  );
+  const accounts = useResource(
+    () => api.users(),
+    [api, version],
+    ready && canAssignSources && current.tab === "sources",
+  );
   const conversations = useResource(
     () => api.conversations(),
     [api, version],
@@ -325,6 +353,60 @@ export function LiveApp() {
       existing
         ? t("علاقه‌مندی حذف شد.", "Interest removed.")
         : t("علاقه‌مندی ذخیره شد.", "Interest saved."),
+    );
+  }
+  async function toggleAssignments(sourceID: string) {
+    if (assignmentSource === sourceID) {
+      setAssignmentSource(null);
+      return;
+    }
+    setAssignmentSource(sourceID);
+    if (assignmentData[sourceID]) return;
+    setAssignmentLoading(sourceID);
+    try {
+      const result = await api.assignments(sourceID);
+      setAssignmentData((current) => ({
+        ...current,
+        [sourceID]: result.data,
+      }));
+      setAssignmentDrafts((current) => ({
+        ...current,
+        [sourceID]: result.data.buyer_ids,
+      }));
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Could not load assignments");
+    } finally {
+      setAssignmentLoading(null);
+    }
+  }
+  function toggleBuyerAssignment(sourceID: string, buyerID: string) {
+    setAssignmentDrafts((current) => {
+      const selected = current[sourceID] || [];
+      return {
+        ...current,
+        [sourceID]: selected.includes(buyerID)
+          ? selected.filter((id) => id !== buyerID)
+          : [...selected, buyerID],
+      };
+    });
+  }
+  function saveAssignments(sourceID: string) {
+    const current = assignmentData[sourceID];
+    if (!current) return;
+    void mutate(
+      async () => {
+        const result = await api.replaceAssignments(
+          sourceID,
+          assignmentDrafts[sourceID] || [],
+          current.version,
+        );
+        setAssignmentData((data) => ({ ...data, [sourceID]: result.data }));
+        setAssignmentDrafts((drafts) => ({
+          ...drafts,
+          [sourceID]: result.data.buyer_ids,
+        }));
+      },
+      t("دسترسی خریداران ذخیره شد.", "Buyer assignments saved."),
     );
   }
   const title = tabs.find((tab) => tab.id === current.tab)!;
@@ -892,8 +974,9 @@ export function LiveApp() {
                     )}
                   </p>
                 </div>
-                {errorBox(gateway.error, () => void gateway.refresh())}
-                {gateway.value && !gateway.value.data.connected && (
+                {canAssignSources &&
+                  errorBox(gateway.error, () => void gateway.refresh())}
+                {canAssignSources && gateway.value && !gateway.value.data.connected && (
                   <div className="live-banner">
                     {t(
                       "حساب تلگرام نیاز به ورود دارد. راهنمای اتصال را در تنظیمات ببینید.",
@@ -901,7 +984,7 @@ export function LiveApp() {
                     )}
                   </div>
                 )}
-                <form
+                {canAssignSources && <form
                   className="live-source-form live-panel"
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -985,7 +1068,7 @@ export function LiveApp() {
                       </button>
                     </div>
                   )}
-                </form>
+                </form>}
                 {errorBox(sources.error, () => void sources.refresh())}
                 <div className="live-source-list">
                   {(sources.value?.data || []).map((source) => (
@@ -1014,7 +1097,67 @@ export function LiveApp() {
                           {date(source.last_synced_at)}
                         </small>
                       </div>
-                      <div className="live-source-actions">
+                      {canAssignSources && (
+                        <div className="live-source-assignment">
+                          <button
+                            className="live-secondary"
+                            type="button"
+                            disabled={assignmentLoading === source.id}
+                            onClick={() => void toggleAssignments(source.id)}
+                          >
+                            {assignmentLoading === source.id ? (
+                              <LoaderCircle className="live-spin" size={16} />
+                            ) : (
+                              <ShieldCheck size={16} />
+                            )}
+                            {t("اختصاص خریداران", "Assign buyers")}
+                          </button>
+                          {assignmentSource === source.id &&
+                            assignmentData[source.id] && (
+                              <div className="live-assignment-panel">
+                                <small>
+                                  {t(
+                                    "دسترسی این منبع را برای خریداران فعال انتخاب کنید.",
+                                    "Choose active buyers who can access this source.",
+                                  )}
+                                </small>
+                                <div className="live-assignment-list">
+                                  {(accounts.value?.data || [])
+                                    .filter((account) => account.role === "buyer")
+                                    .map((account) => (
+                                      <label key={account.id}>
+                                        <input
+                                          type="checkbox"
+                                          checked={(
+                                            assignmentDrafts[source.id] || []
+                                          ).includes(account.id)}
+                                          onChange={() =>
+                                            toggleBuyerAssignment(
+                                              source.id,
+                                              account.id,
+                                            )
+                                          }
+                                        />
+                                        <span>
+                                          {account.full_name || account.username}
+                                        </span>
+                                      </label>
+                                    ))}
+                                </div>
+                                <button
+                                  className="live-primary"
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => saveAssignments(source.id)}
+                                >
+                                  <Check size={16} />
+                                  {t("ذخیره دسترسی", "Save access")}
+                                </button>
+                              </div>
+                            )}
+                        </div>
+                      )}
+                      {canAssignSources && <div className="live-source-actions">
                         <button
                           disabled={busy}
                           className="live-secondary"
@@ -1045,7 +1188,7 @@ export function LiveApp() {
                         >
                           <Trash2 size={18} />
                         </button>
-                      </div>
+                      </div>}
                     </article>
                   ))}
                 </div>
@@ -1254,7 +1397,7 @@ export function LiveApp() {
                   <p>
                     {t(
                       "حساب، تنظیمات و علاقه‌مندی‌های شما فعال است. دسترسی به پیشنهادها و منابع پس از تکمیل تخصیص منابع در مرحلهٔ ۳ فعال می‌شود.",
-                      "Your account, preferences and interests are available. Assigned-source offers and conversations become available in step 3.",
+                        "Your account, preferences and interests are available. Offers and conversations follow your administrator-managed source assignments.",
                     )}
                   </p>
                   <button
