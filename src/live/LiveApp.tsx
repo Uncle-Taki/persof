@@ -686,7 +686,7 @@ export function LiveApp() {
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      aria-label={t("جستجو در این صفحه…", "Search this page…")} placeholder={t("جستجو در این صفحه…", "Search this page…")}
+                      placeholder={t("جستجو در این صفحه…", "Search this page…")}
                       aria-label={t("جستجوی پیشنهادها", "Search offers")}
                     />
                   </label>
