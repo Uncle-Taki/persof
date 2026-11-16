@@ -111,6 +111,8 @@ export function LiveApp() {
   const [assignmentLoading, setAssignmentLoading] = useState<string | null>(
     null,
   );
+  const [catalogDraft, setCatalogDraft] = useState({ name: "", category: "", unit: "", pack_size: "", prescription_required: false, expiry_required: false });
+  const [interestDrafts, setInterestDrafts] = useState<Record<string, { max_price_amount: string; min_quantity: string; preferred_city: string }>>({});
   useEffect(() => {
     if (!confirmDelete) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -346,6 +348,7 @@ export function LiveApp() {
     catalog.find((p) => p.id === id)?.name || t("محصول", "Product");
   const isInterested = (id: string) =>
     interestList.some((i) => i.product_id === id);
+  const interestFor = (id: string) => interestList.find((i) => i.product_id === id);
   function toggleInterest(id: string) {
     const existing = interestList.find((i) => i.product_id === id);
     void mutate(
@@ -353,6 +356,36 @@ export function LiveApp() {
       existing
         ? t("علاقه‌مندی حذف شد.", "Interest removed.")
         : t("علاقه‌مندی ذخیره شد.", "Interest saved."),
+    );
+  }
+  function saveInterestFilters(productID: string) {
+    const interest = interestFor(productID);
+    const draft = interestDrafts[productID];
+    if (!interest || !draft) return;
+    void mutate(
+      () => api.updateInterest(interest.id, {
+        max_price_amount: draft.max_price_amount ? Number(draft.max_price_amount) : null,
+        min_quantity: draft.min_quantity ? Number(draft.min_quantity) : null,
+        preferred_city: draft.preferred_city,
+      }),
+      t("فیلتر علاقه‌مندی ذخیره شد.", "Interest filters saved."),
+    );
+  }
+  function createCatalogProduct(event: React.FormEvent) {
+    event.preventDefault();
+    void mutate(
+      async () => {
+        await api.createProduct({
+          name: catalogDraft.name.trim(),
+          category: catalogDraft.category.trim(),
+          unit: catalogDraft.unit.trim(),
+          ...(catalogDraft.pack_size ? { pack_size: Number(catalogDraft.pack_size) } : {}),
+          prescription_required: catalogDraft.prescription_required,
+          expiry_required: catalogDraft.expiry_required,
+        });
+        setCatalogDraft({ name: "", category: "", unit: "", pack_size: "", prescription_required: false, expiry_required: false });
+      },
+      t("محصول به کاتالوگ اضافه شد.", "Product added to catalog."),
     );
   }
   async function toggleAssignments(sourceID: string) {
@@ -913,6 +946,22 @@ export function LiveApp() {
                 </div>
                 {errorBox(products.error, () => void products.refresh())}
                 {errorBox(interests.error, () => void interests.refresh())}
+                {canAssignSources && (
+                  <form className="live-panel live-catalog-form" onSubmit={createCatalogProduct}>
+                    <strong>{t("افزودن محصول سلامت", "Add healthcare product")}</strong>
+                    <div className="live-input-action">
+                      <input required placeholder={t("نام محصول", "Product name")} value={catalogDraft.name} onChange={(e) => setCatalogDraft({ ...catalogDraft, name: e.target.value })} />
+                      <input required placeholder={t("دسته‌بندی", "Category")} value={catalogDraft.category} onChange={(e) => setCatalogDraft({ ...catalogDraft, category: e.target.value })} />
+                      <input placeholder={t("واحد", "Unit")} value={catalogDraft.unit} onChange={(e) => setCatalogDraft({ ...catalogDraft, unit: e.target.value })} />
+                      <input type="number" min="1" placeholder={t("تعداد بسته", "Pack size")} value={catalogDraft.pack_size} onChange={(e) => setCatalogDraft({ ...catalogDraft, pack_size: e.target.value })} />
+                      <button className="live-primary" disabled={busy} type="submit"><Plus size={17} />{t("افزودن", "Add")}</button>
+                    </div>
+                    <div className="live-assignment-list">
+                      <label><input type="checkbox" checked={catalogDraft.prescription_required} onChange={(e) => setCatalogDraft({ ...catalogDraft, prescription_required: e.target.checked })} />{t("نیازمند نسخه", "Prescription required")}</label>
+                      <label><input type="checkbox" checked={catalogDraft.expiry_required} onChange={(e) => setCatalogDraft({ ...catalogDraft, expiry_required: e.target.checked })} />{t("تاریخ انقضا لازم است", "Expiry required")}</label>
+                    </div>
+                  </form>
+                )}
                 <div className="live-catalog-grid">
                   {catalog.map((product) => (
                     <article className="live-catalog-card" key={product.id}>
@@ -925,6 +974,7 @@ export function LiveApp() {
                           {product.brand} · {product.model}
                         </p>
                         <small>{product.category}</small>
+                        {(product.unit || product.pack_size) && <small>{product.pack_size ? `${product.pack_size} ` : ""}{product.unit}</small>}
                       </div>
                       <button
                         className={
@@ -944,6 +994,20 @@ export function LiveApp() {
                           ? t("ذخیره شده", "Saved")
                           : t("افزودن", "Add")}
                       </button>
+                      {isInterested(product.id) && (() => {
+                        const interest = interestFor(product.id)!;
+                        const draft = interestDrafts[product.id] || {
+                          max_price_amount: interest.max_price_amount == null ? "" : String(interest.max_price_amount),
+                          min_quantity: interest.min_quantity == null ? "" : String(interest.min_quantity),
+                          preferred_city: interest.preferred_city || "",
+                        };
+                        return <div className="live-interest-filters">
+                          <input type="number" min="0" placeholder={t("حداکثر قیمت", "Max price")} value={draft.max_price_amount} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, max_price_amount: e.target.value } })} />
+                          <input type="number" min="1" placeholder={t("حداقل تعداد", "Min quantity")} value={draft.min_quantity} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, min_quantity: e.target.value } })} />
+                          <input placeholder={t("شهر", "City")} value={draft.preferred_city} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, preferred_city: e.target.value } })} />
+                          <button type="button" className="live-secondary" disabled={busy} onClick={() => saveInterestFilters(product.id)}>{t("فیلتر", "Filters")}</button>
+                        </div>;
+                      })()}
                     </article>
                   ))}
                 </div>
