@@ -11,7 +11,7 @@ npm run typecheck
 npm run build
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:8080`; override with `API_PROXY_TARGET` during local development. Sign in with a username and password. The server sets an HttpOnly session cookie; the client keeps CSRF only in memory and never stores passwords or API tokens. Settings persists profile, language/location/default-sort/number preferences and password changes; administrative users can manage permitted accounts. Buyer shared-marketplace access stays blocked until step 3. Source status and interests are server data, while navigation uses URL hashes and survives reload.
+Vite proxies `/api` to `http://127.0.0.1:8080`; override with `API_PROXY_TARGET` during local development. Sign in with a username and password. The server sets an HttpOnly session cookie; the client keeps CSRF only in memory and never stores passwords or API tokens. Settings persists profile, language/location/default-sort/number preferences and password changes; administrative users can manage permitted accounts. Buyers read only marketplace data permitted by their explicit source assignments. Administrators manage assignments in Sources; revocation removes subsequent access. Healthcare catalog creation and persisted personal price/quantity/city filters are integrated. Source status and interests are server data, while navigation uses URL hashes and survives reload.
 
 The initial live catalog is electronics. Add interests from the actual catalog; adding an interest does not invent a price, offer, seller or stock state. Unsupported prototype settings are absent from the live UI. Outreach defaults to disabled and its enabled status comes from the authenticated session endpoint.
 
