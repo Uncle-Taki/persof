@@ -419,24 +419,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/sources/{id}/assignments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Read explicit workspace source grants */
-        get: operations["getSourceAssignments"];
-        /** Atomically replace grants for active buyers */
-        put: operations["replaceSourceAssignments"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/matches": {
         parameters: {
             query?: never;
@@ -700,6 +682,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources/{id}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read explicit workspace source grants (admin/super_admin) */
+        get: operations["getSourceAssignments"];
+        /** Atomically replace grants for active buyers (admin/super_admin) */
+        put: operations["replaceSourceAssignments"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -745,26 +747,6 @@ export interface components {
             has_topics?: boolean;
             has_discussion?: boolean;
             sender_metadata_available?: boolean;
-        };
-        SourceAssignments: {
-            /** Format: uuid */
-            source_id: string;
-            /** Format: uuid */
-            workspace_id: string;
-            /** Format: uuid */
-            buyer_ids: string[];
-            /** Format: int64 */
-            version: number;
-            /** @enum {string} */
-            linked_peer_policy: "explicit";
-            /** Format: int64 */
-            linked_discussion_peer_id?: number;
-        };
-        SourceAssignmentsUpdate: {
-            /** Format: uuid */
-            buyer_ids: string[];
-            /** Format: int64 */
-            version: number;
         };
         Product: {
             /** Format: uuid */
@@ -844,6 +826,18 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
             product?: components["schemas"]["Product"];
+            /** Format: uuid */
+            workspace_id: string;
+            /**
+             * Format: uuid
+             * @description Exact normalized Telegram peer; omitted for unresolved provenance. No implicit buyer grant.
+             */
+            source_id?: string;
+            /**
+             * Format: uuid
+             * @description Legacy attribution only; newly ingested shared listings have no buyer owner.
+             */
+            owner_id?: string;
         };
         ScoreBreakdown: {
             final_score: number;
@@ -887,7 +881,10 @@ export interface components {
         TelegramSource: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Creator/legacy provenance, not an access grant.
+             */
             owner_id: string;
             telegram_peer_id: number;
             username?: string;
@@ -901,6 +898,13 @@ export interface components {
             last_message_id: number;
             /** Format: date-time */
             last_synced_at?: string;
+            /** Format: uuid */
+            workspace_id: string;
+            /**
+             * Format: int64
+             * @description Related peer only; buyer assignments never inherit.
+             */
+            linked_discussion_peer_id?: number;
         };
         Conversation: {
             /** Format: uuid */
@@ -979,6 +983,31 @@ export interface components {
             user: components["schemas"]["Account"];
             csrf_token: string;
             permissions: string[];
+        };
+        SourceAssignments: {
+            /** Format: uuid */
+            source_id: string;
+            /** Format: uuid */
+            workspace_id: string;
+            buyer_ids: string[];
+            /** Format: int64 */
+            version: number;
+            /**
+             * @description Discussion peers require separate registration and assignments; grants never inherit.
+             * @enum {string}
+             */
+            linked_peer_policy: "explicit";
+            /** Format: int64 */
+            linked_discussion_peer_id?: number;
+        };
+        SourceAssignmentsUpdate: {
+            /** @description Full replacement with active buyer IDs; [] clears every grant. */
+            buyer_ids: string[];
+            /**
+             * Format: int64
+             * @description Version returned by GET; stale versions fail with 409.
+             */
+            version: number;
         };
     };
     responses: never;
@@ -1081,6 +1110,26 @@ export interface operations {
             };
         };
     };
+    deleteInterest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Interest deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     updateInterest: {
         parameters: {
             query?: never;
@@ -1112,26 +1161,6 @@ export interface operations {
             };
             /** @description Interest not found or not owned by the user */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    deleteInterest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Interest deleted */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1666,50 +1695,6 @@ export interface operations {
             };
         };
     };
-    getSourceAssignments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { id: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        success?: boolean;
-                        data?: components["schemas"]["SourceAssignments"];
-                    };
-                };
-            };
-        };
-    };
-    replaceSourceAssignments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { id: string };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SourceAssignmentsUpdate"];
-            };
-        };
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        success?: boolean;
-                        data?: components["schemas"]["SourceAssignments"];
-                    };
-                };
-            };
-        };
-    };
     updateSourceStatus: {
         parameters: {
             query?: never;
@@ -1727,6 +1712,13 @@ export interface operations {
         responses: {
             /** @description Status updated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resolve source capabilities with the connected Telegram account before resuming */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2741,6 +2733,158 @@ export interface operations {
                 content?: never;
             };
             /** @description Gateway unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSourceAssignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current explicit grants; buyer marketplace access is controlled by these live grants. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: components["schemas"]["SourceAssignments"];
+                    };
+                };
+            };
+            /** @description Invalid ID/body, duplicate/excess IDs, inactive or non-buyer account */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Administrator role or CSRF/origin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or removed source */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assignment version changed; reload before replacement */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description JSON required */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    replaceSourceAssignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceAssignmentsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Current explicit grants; buyer marketplace access is controlled by these live grants. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: components["schemas"]["SourceAssignments"];
+                    };
+                };
+            };
+            /** @description Invalid ID/body, duplicate/excess IDs, inactive or non-buyer account */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Administrator role or CSRF/origin required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or removed source */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assignment version changed; reload before replacement */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description JSON required */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Storage unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;

@@ -950,10 +950,10 @@ export function LiveApp() {
                   <form className="live-panel live-catalog-form" onSubmit={createCatalogProduct}>
                     <strong>{t("افزودن محصول سلامت", "Add healthcare product")}</strong>
                     <div className="live-input-action">
-                      <input required placeholder={t("نام محصول", "Product name")} value={catalogDraft.name} onChange={(e) => setCatalogDraft({ ...catalogDraft, name: e.target.value })} />
-                      <input required placeholder={t("دسته‌بندی", "Category")} value={catalogDraft.category} onChange={(e) => setCatalogDraft({ ...catalogDraft, category: e.target.value })} />
-                      <input placeholder={t("واحد", "Unit")} value={catalogDraft.unit} onChange={(e) => setCatalogDraft({ ...catalogDraft, unit: e.target.value })} />
-                      <input type="number" min="1" placeholder={t("تعداد بسته", "Pack size")} value={catalogDraft.pack_size} onChange={(e) => setCatalogDraft({ ...catalogDraft, pack_size: e.target.value })} />
+                      <input required aria-label={t("نام محصول", "Product name")} placeholder={t("نام محصول", "Product name")} value={catalogDraft.name} onChange={(e) => setCatalogDraft({ ...catalogDraft, name: e.target.value })} />
+                      <input required aria-label={t("دسته‌بندی", "Category")} placeholder={t("دسته‌بندی", "Category")} value={catalogDraft.category} onChange={(e) => setCatalogDraft({ ...catalogDraft, category: e.target.value })} />
+                      <input aria-label={t("واحد", "Unit")} placeholder={t("واحد", "Unit")} value={catalogDraft.unit} onChange={(e) => setCatalogDraft({ ...catalogDraft, unit: e.target.value })} />
+                      <input type="number" min="1" aria-label={t("تعداد بسته", "Pack size")} placeholder={t("تعداد بسته", "Pack size")} value={catalogDraft.pack_size} onChange={(e) => setCatalogDraft({ ...catalogDraft, pack_size: e.target.value })} />
                       <button className="live-primary" disabled={busy} type="submit"><Plus size={17} />{t("افزودن", "Add")}</button>
                     </div>
                     <div className="live-assignment-list">
@@ -1002,9 +1002,9 @@ export function LiveApp() {
                           preferred_city: interest.preferred_city || "",
                         };
                         return <div className="live-interest-filters">
-                          <input type="number" min="0" placeholder={t("حداکثر قیمت", "Max price")} value={draft.max_price_amount} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, max_price_amount: e.target.value } })} />
-                          <input type="number" min="1" placeholder={t("حداقل تعداد", "Min quantity")} value={draft.min_quantity} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, min_quantity: e.target.value } })} />
-                          <input placeholder={t("شهر", "City")} value={draft.preferred_city} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, preferred_city: e.target.value } })} />
+                          <input type="number" min="0" aria-label={t("حداکثر قیمت", "Max price")} placeholder={t("حداکثر قیمت", "Max price")} value={draft.max_price_amount} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, max_price_amount: e.target.value } })} />
+                          <input type="number" min="1" aria-label={t("حداقل تعداد", "Min quantity")} placeholder={t("حداقل تعداد", "Min quantity")} value={draft.min_quantity} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, min_quantity: e.target.value } })} />
+                          <input aria-label={t("شهر", "City")} placeholder={t("شهر", "City")} value={draft.preferred_city} onChange={(e) => setInterestDrafts({ ...interestDrafts, [product.id]: { ...draft, preferred_city: e.target.value } })} />
                           <button type="button" className="live-secondary" disabled={busy} onClick={() => saveInterestFilters(product.id)}>{t("فیلتر", "Filters")}</button>
                         </div>;
                       })()}

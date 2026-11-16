@@ -76,13 +76,13 @@ test.describe("server-backed workspace", () => {
     await page.getByRole("button", { name: "Interests", exact: true }).click();
     const card = page.locator(".live-catalog-card").last();
     await expect(card).toBeVisible();
-    const button = card.getByRole("button");
+    const button = card.getByRole("button", { name: /^(Add|Saved)$/, exact: true });
     const saved = await button.innerText();
     await button.click();
     await expect(button).toHaveText(saved.trim() === "Saved" ? "Add" : "Saved");
     await page.reload();
     await expect(
-      page.locator(".live-catalog-card").last().getByRole("button"),
+      page.locator(".live-catalog-card").last().getByRole("button", { name: /^(Add|Saved)$/, exact: true }),
     ).toHaveText(saved.trim() === "Saved" ? "Add" : "Saved");
   });
   test("resolves a source through the gateway and persists pause/resume", async ({
