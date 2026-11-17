@@ -73,7 +73,7 @@ test.describe("server-backed workspace", () => {
   });
   test("persists interest changes across reload", async ({ page }) => {
     await signIn(page);
-    await page.getByRole("button", { name: "Interests", exact: true }).click();
+    await page.getByRole("button", { name: /^(Product interests|Interests)$/ }).click();
     const card = page.locator(".live-catalog-card").last();
     await expect(card).toBeVisible();
     const button = card.getByRole("button");
@@ -89,7 +89,7 @@ test.describe("server-backed workspace", () => {
     page,
   }) => {
     await signIn(page);
-    await page.getByRole("button", { name: "Sources", exact: true }).click();
+    await page.getByRole("button", { name: /^(Healthcare sources|Sources)$/ }).click();
     await page
       .getByLabel("Telegram link or username")
       .fill("@tech_super_fixture");
