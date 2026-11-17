@@ -1335,8 +1335,9 @@ export function LiveApp() {
                           )}
                         </div>
                         <div className="live-thread-actions">
-                          {details.value.data.conversation.state ===
-                            "AWAITING_APPROVAL" && (
+                          {canAssignSources &&
+                            details.value.data.conversation.state ===
+                              "AWAITING_APPROVAL" && (
                             <button
                               className="live-primary"
                               disabled={
