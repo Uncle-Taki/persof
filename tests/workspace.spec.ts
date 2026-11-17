@@ -16,7 +16,7 @@ async function signIn(page: Page) {
     await page.getByRole("button", { name: "تغییر زبان", exact: true }).click();
   }
   await expect(
-    page.getByRole("heading", { name: "Offers", exact: true }),
+    page.getByRole("heading", { name: "Healthcare offers", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Mock connection", { exact: true }),
@@ -60,7 +60,7 @@ test.describe("server-backed workspace", () => {
     await expect(page.locator(".live-offer").first()).toBeVisible({
       timeout: 20000,
     });
-    await expect(page.locator(".live-offer").first()).toContainText("iPhone");
+    await expect(page.locator(".live-offer").first()).toContainText("سرم نرمال سالین");
     const product = await page
       .locator(".live-select option")
       .nth(1)

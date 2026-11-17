@@ -118,6 +118,9 @@ export class ApiClient {
     });
   session = () => this.request<Session>("/session");
   products = () => this.request<CatalogProduct[]>("/products?limit=100");
+  product = (id: string) => this.request<CatalogProduct>(`/products/${id}`);
+  offer = (id: string) => this.request<{ offer: Offer; score_breakdown: components["schemas"]["ScoreBreakdown"] }>(`/offers/${id}`);
+  source = (id: string) => this.request<Source>(`/sources/${id}`);
   createProduct = (data: components["schemas"]["CreateProductRequest"]) =>
     this.request<CatalogProduct>("/products", { method: "POST", body: JSON.stringify(data) });
   updateProduct = (id: string, data: components["schemas"]["UpdateProductRequest"]) =>

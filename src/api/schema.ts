@@ -927,7 +927,7 @@ export interface components {
             /** Format: uuid */
             user_id: string;
             /** @enum {string} */
-            catalog_domain: "electronics";
+            catalog_domain: "healthcare";
             /** @enum {string} */
             workspace_mode: "multi_user_identity";
             demo: boolean;

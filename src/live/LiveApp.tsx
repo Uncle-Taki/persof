@@ -36,9 +36,9 @@ import { AccountPanel } from "./AccountPanel";
 
 type Tab = "offers" | "interests" | "sources" | "conversations" | "settings";
 const tabs: { id: Tab; fa: string; en: string; icon: typeof Activity }[] = [
-  { id: "offers", fa: "پیشنهادها", en: "Offers", icon: Activity },
-  { id: "interests", fa: "علاقه‌مندی‌ها", en: "Interests", icon: Bookmark },
-  { id: "sources", fa: "منابع تلگرام", en: "Sources", icon: Radio },
+  { id: "offers", fa: "پیشنهادهای سلامت", en: "Healthcare offers", icon: Activity },
+  { id: "interests", fa: "پایش محصولات", en: "Product interests", icon: Bookmark },
+  { id: "sources", fa: "منابع سلامت", en: "Healthcare sources", icon: Radio },
   {
     id: "conversations",
     fa: "گفتگوها",
@@ -385,7 +385,7 @@ export function LiveApp() {
         });
         setCatalogDraft({ name: "", category: "", unit: "", pack_size: "", prescription_required: false, expiry_required: false });
       },
-      t("محصول به کاتالوگ اضافه شد.", "Product added to catalog."),
+      t("محصول سلامت به کاتالوگ اضافه شد.", "Healthcare product added to catalog."),
     );
   }
   async function toggleAssignments(sourceID: string) {
@@ -948,7 +948,7 @@ export function LiveApp() {
                 {errorBox(interests.error, () => void interests.refresh())}
                 {canAssignSources && (
                   <form className="live-panel live-catalog-form" onSubmit={createCatalogProduct}>
-                    <strong>{t("افزودن محصول سلامت", "Add healthcare product")}</strong>
+                    <strong>{t("افزودن محصول به کاتالوگ سلامت", "Add product to healthcare catalog")}</strong>
                     <div className="live-input-action">
                       <input required placeholder={t("نام محصول", "Product name")} value={catalogDraft.name} onChange={(e) => setCatalogDraft({ ...catalogDraft, name: e.target.value })} />
                       <input required placeholder={t("دسته‌بندی", "Category")} value={catalogDraft.category} onChange={(e) => setCatalogDraft({ ...catalogDraft, category: e.target.value })} />
